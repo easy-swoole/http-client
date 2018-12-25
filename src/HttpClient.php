@@ -36,6 +36,7 @@ class HttpClient
      * addData 方法
      */
     protected $postDataByAddData = [];
+    protected $cookies = [];
 
     function __construct(?string $url = null)
     {
@@ -97,23 +98,27 @@ class HttpClient
         return $this->swooleHttpClient;
     }
 
-    public function post($data = null)
+    public function post($data = [],$contentType = null)
     {
         $this->postData = $data;
         $this->isPost = true;
+        if($contentType){
+            $this->setHeader('Content-Type',$contentType);
+        }
+        if(is_string($data)){
+            $this->setHeader('Content-Length',strlen($data));
+        }
     }
 
     public function postJSON(string $json):HttpClient
     {
-        $this->setHeader('Content-Type','text/json');
-        $this->post($json);
+        $this->post($json,'text/json');
         return $this;
     }
 
     public function postXML(string $xml):HttpClient
     {
-        $this->setHeader('Content-Type','text/xml');
-        $this->post($xml);
+        $this->post($xml,'text/xml');
         return $this;
     }
 
@@ -135,12 +140,27 @@ class HttpClient
         return $this;
     }
 
+    public function addCookies(array $cookies):HttpClient
+    {
+        $this->cookies = $cookies;
+        return $this;
+    }
+
+    public function addCookie($key,$value):HttpClient
+    {
+        $this->cookies[$key] = $value;
+        return $this;
+    }
+
     public function exec(?float $timeout = null):Response
     {
         if($timeout !== null){
             $this->setTimeout($timeout);
         }
         $client = $this->createClient();
+        if(!empty($this->cookies)){
+            $client->setCookies($this->cookies);
+        }
         if($this->isPost){
             foreach ($this->postFiles as $file){
                 $client->addFile(...$file);
@@ -148,7 +168,7 @@ class HttpClient
             foreach ($this->postDataByAddData as $addDatum){
                 $client->addData(...$addDatum);
             }
-            $client->post($this->url->getPath(),$this->url->getQuery(), $this->postData);
+            $client->post($this->getUri($this->url->getPath(),$this->url->getQuery()), $this->postData);
         }else{
             $client->get($this->getUri($this->url->getPath(),$this->url->getQuery()));
         }
