@@ -9,6 +9,7 @@
 namespace EasySwoole\HttpClient;
 
 
+use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Bean\Url;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
 use Swoole\Coroutine\Http\Client;
@@ -35,12 +36,14 @@ class HttpClient
      * addData 方法
      */
     protected $postDataByAddData = [];
+
     function __construct(?string $url = null)
     {
         if(!empty($url)){
             $this->setUrl($url);
         }
         $this->setTimeout(0.1);
+        $this->setConnectTimeout(0.1);
     }
 
     function setUrl(string $url):HttpClient
@@ -53,9 +56,15 @@ class HttpClient
         return $this;
     }
 
-    public function setTimeout(float $connectTimeout):HttpClient
+    public function setTimeout(float $timeout):HttpClient
     {
-        $this->clientSetting['timeout'] = $connectTimeout;
+        $this->clientSetting['timeout'] = $timeout;
+        return $this;
+    }
+
+    public function setConnectTimeout(float $connectTimeout):HttpClient
+    {
+        $this->clientSetting['connect_timeout'] = $connectTimeout;
         return $this;
     }
 
@@ -126,7 +135,7 @@ class HttpClient
         return $this;
     }
 
-    public function exec(?float $timeout = null)
+    public function exec(?float $timeout = null):Response
     {
         if($timeout !== null){
             $this->setTimeout($timeout);
@@ -143,11 +152,9 @@ class HttpClient
         }else{
             $client->get($this->getUri($this->url->getPath(),$this->url->getQuery()));
         }
-
-        $body =  $client->body;
-        var_dump($body);
+        $response = new Response((array)$client);
         $client->close();
-
+        return $response;
     }
 
     private function createClient():Client
@@ -173,7 +180,7 @@ class HttpClient
         }
     }
 
-    private function getUri(string $path, string $query): string
+    private function getUri(?string $path, ?string $query): string
     {
         return !empty($query) ? $path . '?' . $query : $path;
     }
