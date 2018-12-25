@@ -26,7 +26,10 @@ class HttpClient
     ];
     protected $clientSetting = [];
     protected $swooleHttpClient;
-    protected $postData;
+    /*
+     * 默认数组，以form-data提交
+     */
+    protected $postData = [];
     protected $isPost = false;
     /*
      * addFile 方法
