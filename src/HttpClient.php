@@ -202,6 +202,9 @@ class HttpClient
 
     private function getUri(?string $path, ?string $query): string
     {
+        if($path == null){
+            $path = '/';
+        }
         return !empty($query) ? $path . '?' . $query : $path;
     }
 }

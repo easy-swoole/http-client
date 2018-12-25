@@ -33,9 +33,13 @@ class Multi
             });
         }
         $ret = [];
+        $all = count($this->list);
         $start = microtime(true);
         while (1){
             if(round(microtime(true) - $start,3) > $timeout ){
+                break;
+            }
+            if(count($ret) == $all){
                 break;
             }
             $temp = $channel->pop(0.01);
