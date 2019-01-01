@@ -125,21 +125,26 @@ class HttpClient
         return $this;
     }
 
-    public function addFile(string $path, string $name, string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0):HttpClient
+    /*
+     * 与swoole cient一致
+     * string $path, string $name, string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0
+     *
+     */
+    public function addFile(...$args):HttpClient
     {
         $this->isPost = true;
-        $this->postFiles[] = [
-            $path,$name,$mimeType,$filename,$offset,$length
-        ];
+        $this->postFiles[] = $args;
         return $this;
     }
 
-    public function addData(string $data, string $name, string $mimeType = null, string $filename = null):HttpClient
+    /*
+     * 与swoole client 一致
+     * string $data, string $name, string $mimeType = null, string $filename = null
+     */
+    public function addData(...$args):HttpClient
     {
         $this->isPost = true;
-        $this->postDataByAddData[] = [
-            $data,$name,$mimeType,$filename
-        ];
+        $this->postDataByAddData[] = $args;
         return $this;
     }
 
