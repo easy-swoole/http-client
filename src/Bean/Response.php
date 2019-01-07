@@ -13,12 +13,21 @@ use EasySwoole\Spl\SplBean;
 
 class Response extends SplBean
 {
+    protected $headers;
     protected $body;
     protected $errCode;
     protected $errMsg;
     protected $statusCode;
     protected $set_cookie_headers;
     protected $cookies;
+
+    /**
+     * @return mixed
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
 
     /**
      * @return mixed
