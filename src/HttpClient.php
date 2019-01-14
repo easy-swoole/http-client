@@ -24,6 +24,7 @@ class HttpClient
         'Pragma' => 'no-cache',
         'Cache-Control' => 'no-cache'
     ];
+    protected $method = null;
     protected $clientSetting = [];
     protected $swooleHttpClient;
     /*
@@ -93,6 +94,12 @@ class HttpClient
     public function setHeader($key,$value):HttpClient
     {
         $this->header[$key] = $value;
+        return $this;
+    }
+    
+    public function setMethod($method):HttpClient
+    {
+        $this->method = strtoupper($method);
         return $this;
     }
 
@@ -166,6 +173,9 @@ class HttpClient
             $this->setTimeout($timeout);
         }
         $client = $this->createClient();
+        if(!empty($this->method)){
+            $client->setMethod($this->method);
+        }
         if(!empty($this->cookies)){
             $client->setCookies($this->cookies);
         }
@@ -178,7 +188,8 @@ class HttpClient
             }
             $client->post($this->getUri($this->url->getPath(),$this->url->getQuery()), $this->postData);
         }else{
-            $client->get($this->getUri($this->url->getPath(),$this->url->getQuery()));
+            $method = $this->method? 'execute': 'get';
+            $client->$method($this->getUri($this->url->getPath(),$this->url->getQuery()));
         }
         $response = new Response((array)$client);
         $client->close();
