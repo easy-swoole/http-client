@@ -25,6 +25,7 @@ class HttpClient
         'Cache-Control' => 'no-cache'
     ];
     protected $method = null;
+    protected $data = null;
     protected $clientSetting = [];
     protected $swooleHttpClient;
     /*
@@ -94,6 +95,17 @@ class HttpClient
     public function setHeader($key,$value):HttpClient
     {
         $this->header[$key] = $value;
+        return $this;
+    }
+    
+    public function setData($data):HttpClient 
+    {
+        if(is_array($data)) {
+            $this->data = json_encode($data, JSON_UNESCAPED_UNICODE);
+        }
+        if(is_string($data)) {
+            $this->data = $data;
+        }  
         return $this;
     }
     
@@ -188,6 +200,9 @@ class HttpClient
             }
             $client->post($this->getUri($this->url->getPath(),$this->url->getQuery()), $this->postData);
         }else{
+            if(!empty($this->data)){
+                $client->setData($this->data);
+            }
             $method = $this->method? 'execute': 'get';
             $client->$method($this->getUri($this->url->getPath(),$this->url->getQuery()));
         }
