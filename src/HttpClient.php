@@ -46,8 +46,8 @@ class HttpClient
         if(!empty($url)){
             $this->setUrl($url);
         }
-        $this->setTimeout(0.1);
-        $this->setConnectTimeout(0.1);
+        $this->setTimeout(3);
+        $this->setConnectTimeout(5);
     }
 
     function setUrl(string $url):HttpClient
