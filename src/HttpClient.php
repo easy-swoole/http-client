@@ -191,11 +191,7 @@ class HttpClient
             $port = $this->url->getPort();
             $ssl = $this->url->getScheme() === 'https';
             if(empty($port)){
-                if($this->url->getScheme() == 'https'){
-                    $port = 443;
-                }else{
-                    $port = 80;
-                }
+                $port = $ssl ? 443 : 80;
             }
             $cli = new Client($this->url->getHost(), $port, $ssl);
             $cli->set($this->clientSetting);
