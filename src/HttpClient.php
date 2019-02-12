@@ -189,11 +189,10 @@ class HttpClient
     {
         if($this->url instanceof Url){
             $port = $this->url->getPort();
-            $ssl = false;
+            $ssl = $this->url->getScheme() === 'https';
             if(empty($port)){
                 if($this->url->getScheme() == 'https'){
                     $port = 443;
-                    $ssl = true;
                 }else{
                     $port = 80;
                 }
