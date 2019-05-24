@@ -166,9 +166,6 @@ class HttpClient
             $this->setTimeout($timeout);
         }
         $client = $this->createClient();
-        if(!empty($this->cookies)){
-            $client->setCookies($this->cookies);
-        }
         if($this->isPost){
             foreach ($this->postFiles as $file){
                 $client->addFile(...$file);
@@ -185,6 +182,17 @@ class HttpClient
         return $response;
     }
 
+    public function upgrade():bool
+    {
+        $client = $this->createClient();
+        return $client->upgrade($this->getUri($this->url->getPath(),$this->url->getQuery()));
+    }
+
+    public function getClient():Client
+    {
+        return $this->swooleHttpClient;
+    }
+
     private function createClient():Client
     {
         if($this->url instanceof Url){
@@ -196,6 +204,9 @@ class HttpClient
             $cli = new Client($this->url->getHost(), $port, $ssl);
             $cli->set($this->clientSetting);
             $cli->setHeaders($this->header);
+            if(!empty($this->cookies)){
+                $cli->setCookies($this->cookies);
+            }
             $this->swooleHttpClient = $cli;
             return $this->swooleHttpClient;
         }else{
