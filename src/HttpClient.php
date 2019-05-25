@@ -13,6 +13,7 @@ use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Bean\Url;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
 use Swoole\Coroutine\Http\Client;
+use Swoole\WebSocket\Frame;
 
 class HttpClient
 {
@@ -25,7 +26,7 @@ class HttpClient
         'Cache-Control' => 'no-cache'
     ];
     protected $clientSetting = [];
-    protected $swooleHttpClient;
+    protected $httpClient;
     /*
      * 默认数组，以form-data提交
      */
@@ -94,11 +95,6 @@ class HttpClient
     {
         $this->header[$key] = $value;
         return $this;
-    }
-
-    public function getSwooleHttpClient():?Client
-    {
-        return $this->swooleHttpClient;
     }
 
     public function post($data = [],$contentType = null)
@@ -189,9 +185,19 @@ class HttpClient
         return $client->upgrade($this->getUri($this->url->getPath(),$this->url->getQuery()));
     }
 
+    public function push(Frame $frame):bool
+    {
+        return $this->httpClient->push($frame);
+    }
+
+    public function recv(float $timeout = 1.0):Frame
+    {
+        return $this->httpClient->recv($timeout);
+    }
+
     public function getClient():Client
     {
-        return $this->swooleHttpClient;
+        return $this->httpClient;
     }
 
     private function createClient():Client
@@ -208,8 +214,8 @@ class HttpClient
             if(!empty($this->cookies)){
                 $cli->setCookies($this->cookies);
             }
-            $this->swooleHttpClient = $cli;
-            return $this->swooleHttpClient;
+            $this->httpClient = $cli;
+            return $this->httpClient;
         }else{
             throw new InvalidUrl("url is empty");
         }
