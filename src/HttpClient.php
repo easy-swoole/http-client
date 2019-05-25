@@ -182,8 +182,9 @@ class HttpClient
         return $response;
     }
 
-    public function upgrade():bool
+    public function upgrade(bool $mask = true):bool
     {
+        $this->clientSetting['websocket_mask'] = $mask;
         $client = $this->createClient();
         return $client->upgrade($this->getUri($this->url->getPath(),$this->url->getQuery()));
     }
