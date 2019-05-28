@@ -19,7 +19,6 @@
         "easyswoole/swoole-ide-helper": "^1.2"
   },
   "autoload": {
-    "files": ["src/CurlFunctions.php"],
     "psr-4": {
       "EasySwoole\\HttpClient\\": "src/"
     }
