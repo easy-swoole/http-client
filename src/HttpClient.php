@@ -41,6 +41,7 @@ class HttpClient
      */
     protected $postDataByAddData = [];
     protected $cookies = [];
+    protected $requestMethod;
 
     function __construct(?string $url = null)
     {
@@ -156,12 +157,21 @@ class HttpClient
         return $this;
     }
 
+    public function setRequestMethod(string $method)
+    {
+        $this->requestMethod = $method;
+        return $this;
+    }
+
     public function exec(?float $timeout = null):Response
     {
         if($timeout !== null){
             $this->setTimeout($timeout);
         }
         $client = $this->createClient();
+        if($this->requestMethod){
+            $client->setMethod($this->requestMethod);
+        }
         if($this->isPost){
             foreach ($this->postFiles as $file){
                 $client->addFile(...$file);
