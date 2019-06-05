@@ -17,21 +17,26 @@ use Swoole\WebSocket\Frame;
 
 class HttpClient
 {
+	/**
+	 * @var Url
+	 */
     protected $url;
     protected $header = [
         "User-Agent" => 'EasySwooleHttpClient/0.1',
         'Accept' => 'text/html,application/xhtml+xml,application/xml',
         'Accept-Encoding' => 'gzip',
         'Pragma' => 'no-cache',
-        'Cache-Control' => 'no-cache'
+        'Cache-Control' => 'no-cache',
+		'Content-Type' => 'application/x-www-form-urlencoded'
     ];
     protected $clientSetting = [];
     protected $httpClient;
+
     /*
-     * 默认数组，以form-data提交
+     * 请求包体
      */
-    protected $postData = [];
-    protected $isPost = false;
+    protected $requestData = [];
+
     /*
      * addFile 方法
      */
@@ -41,7 +46,8 @@ class HttpClient
      */
     protected $postDataByAddData = [];
     protected $cookies = [];
-    protected $requestMethod;
+
+    protected $httpMethod = 'GET';
 
     function __construct(?string $url = null)
     {
@@ -61,6 +67,16 @@ class HttpClient
         }
         return $this;
     }
+
+	/**
+	 * 设置Http请求的包体
+	 * @param array $data 键值对
+	 * @return $this
+	 */
+    public function setData(array $data){
+    	$this->requestData = $data;
+    	return $this;
+	}
 
     public function setTimeout(float $timeout):HttpClient
     {
@@ -92,6 +108,17 @@ class HttpClient
         return $this;
     }
 
+	/**
+	 * 设置http request method
+	 * @param string $httpMethod
+	 * @return HttpClient
+	 */
+    public function setHttpMethod(string $httpMethod):HttpClient
+	{
+    	$this->httpMethod = strtoupper($httpMethod);
+    	return $this;
+	}
+
     public function setHeader($key,$value):HttpClient
     {
         $this->header[$key] = $value;
@@ -100,8 +127,8 @@ class HttpClient
 
     public function post($data = [],$contentType = null)
     {
-        $this->postData = $data;
-        $this->isPost = true;
+        $this->requestData = $data;
+        $this->httpMethod = 'POST';
         if($contentType){
             $this->setHeader('Content-Type',$contentType);
         }
@@ -129,7 +156,6 @@ class HttpClient
      */
     public function addFile(...$args):HttpClient
     {
-        $this->isPost = true;
         $this->postFiles[] = $args;
         return $this;
     }
@@ -140,7 +166,6 @@ class HttpClient
      */
     public function addData(...$args):HttpClient
     {
-        $this->isPost = true;
         $this->postDataByAddData[] = $args;
         return $this;
     }
@@ -157,32 +182,30 @@ class HttpClient
         return $this;
     }
 
-    public function setRequestMethod(string $method)
-    {
-        $this->requestMethod = $method;
-        return $this;
-    }
-
     public function exec(?float $timeout = null):Response
     {
         if($timeout !== null){
             $this->setTimeout($timeout);
         }
+
         $client = $this->createClient();
-        if($this->requestMethod){
-            $client->setMethod($this->requestMethod);
-        }
-        if($this->isPost){
-            foreach ($this->postFiles as $file){
-                $client->addFile(...$file);
-            }
-            foreach ($this->postDataByAddData as $addDatum){
-                $client->addData(...$addDatum);
-            }
-            $client->post($this->getUri($this->url->getPath(),$this->url->getQuery()), $this->postData);
-        }else{
-            $client->get($this->getUri($this->url->getPath(),$this->url->getQuery()));
-        }
+
+		if (count($this->postFiles)){
+			foreach ($this->postFiles as $file){
+				$client->addFile(...$file);
+			}
+		}
+		if (count($this->postDataByAddData)){
+			foreach ($this->postDataByAddData as $addDatum){
+				$client->addData(...$addDatum);
+			}
+		}
+
+		$client->setMethod($this->httpMethod);
+		$client->setData(http_build_query($this->requestData));
+
+		$client->execute($this->getUri($this->url->getPath(),$this->url->getQuery()));
+
         $response = new Response((array)$client);
         $client->close();
         return $response;
