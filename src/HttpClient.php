@@ -79,6 +79,12 @@ class HttpClient
     protected $cookies = [];
 
     /**
+     * 强制开启SSL请求
+     * @var bool
+     */
+    protected $enableSSL = false;
+
+    /**
      * 默认请求头
      * @var array
      */
@@ -120,6 +126,15 @@ class HttpClient
             throw new InvalidUrl("HttpClient: {$url} is invalid");
         }
         return $this;
+    }
+
+    /**
+     * 强制开启SSL
+     * @param bool $enableSSL
+     */
+    public function setEnableSSL(bool $enableSSL = true)
+    {
+        $this->enableSSL = $enableSSL;
     }
 
     /**
@@ -360,9 +375,12 @@ class HttpClient
         $query = $this->url->getQuery();
         $scheme = strtolower($this->url->getScheme());
 
-        // 只允许进行HTTP或者HTTPS请求
-        if ($scheme !== 'http' && $scheme !== 'https') {
-            throw new InvalidUrl("HttpClient: Clients are only allowed to initiate HTTP or HTTPS requests");
+        // 支持的scheme
+        $allowSchemes = ['http' => 80, 'https' => 443, 'ws' => 80, 'wss' => 443];
+
+        // 只允许进行支持的请求
+        if (array_key_exists($scheme, $allowSchemes)) {
+            throw new InvalidUrl("HttpClient: Clients are only allowed to initiate HTTP(WS) or HTTPS(WSS) requests");
         }
 
         // URL即使解析成功了也有可能存在HOST为空的情况
@@ -372,12 +390,12 @@ class HttpClient
 
         // 如果端口是空的 那么根据协议自动补全端口 否则使用原来的端口
         if (empty($port)) {
-            $port = $scheme === 'https' ? 443 : 80;
+            $port = $scheme === $allowSchemes[$scheme];
             $this->url->setPort($port);
         }
 
-        // 如果当前是443端口 则开启SSL安全链接
-        if ($port === 443) {
+        // 如果当前是443端口 或者enableSSL 则开启SSL安全链接
+        if ($this->enableSSL || $port === 443) {
             $this->url->setIsSsl(true);
         }
 
