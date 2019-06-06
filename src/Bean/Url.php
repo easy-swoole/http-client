@@ -18,6 +18,8 @@ class Url extends SplBean
     protected $port;
     protected $path;
     protected $query;
+    protected $isSsl = false;
+    protected $fullPath;
 
     /**
      * @return mixed
@@ -99,4 +101,39 @@ class Url extends SplBean
         $this->query = $query;
     }
 
+    /**
+     * IsSsl Getter
+     * @return mixed
+     */
+    public function getIsSsl()
+    {
+        return $this->isSsl;
+    }
+
+    /**
+     * IsSsl Setter
+     * @param mixed $isSsl
+     */
+    public function setIsSsl($isSsl): void
+    {
+        $this->isSsl = $isSsl;
+    }
+
+    /**
+     * FullPath Getter
+     * @return mixed
+     */
+    public function getFullPath()
+    {
+        return $this->fullPath;
+    }
+
+    /**
+     * FullPath Setter
+     * @param mixed $fullPath
+     */
+    public function setFullPath($fullPath): void
+    {
+        $this->fullPath = $fullPath;
+    }
 }

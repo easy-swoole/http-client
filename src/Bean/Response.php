@@ -8,9 +8,14 @@
 
 namespace EasySwoole\HttpClient\Bean;
 
-
 use EasySwoole\Spl\SplBean;
+use Swoole\Coroutine\Http\Client;
 
+/**
+ * 标准响应体
+ * Class Response
+ * @package EasySwoole\HttpClient\Bean
+ */
 class Response extends SplBean
 {
     protected $headers;
@@ -20,8 +25,22 @@ class Response extends SplBean
     protected $statusCode;
     protected $set_cookie_headers;
     protected $cookies;
+    protected $connected;
+    protected $host;
+    protected $port;
+    protected $ssl;
+    protected $setting;
+    protected $requestMethod;
+    protected $requestHeaders;
+    protected $requestBody;
+    protected $uploadFiles;
+    protected $downloadFile;
+    protected $downloadOffset;
+
+    protected $client;
 
     /**
+     * Headers Getter
      * @return mixed
      */
     public function getHeaders()
@@ -30,6 +49,7 @@ class Response extends SplBean
     }
 
     /**
+     * Body Getter
      * @return mixed
      */
     public function getBody()
@@ -38,6 +58,7 @@ class Response extends SplBean
     }
 
     /**
+     * ErrCode Getter
      * @return mixed
      */
     public function getErrCode()
@@ -46,6 +67,7 @@ class Response extends SplBean
     }
 
     /**
+     * ErrMsg Getter
      * @return mixed
      */
     public function getErrMsg()
@@ -54,6 +76,7 @@ class Response extends SplBean
     }
 
     /**
+     * StatusCode Getter
      * @return mixed
      */
     public function getStatusCode()
@@ -62,18 +85,137 @@ class Response extends SplBean
     }
 
     /**
+     * SetCookieHeaders Getter
      * @return mixed
      */
-    public function getCookiesRaw()
+    public function getSetCookieHeaders()
     {
         return $this->set_cookie_headers;
     }
 
     /**
+     * Cookies Getter
      * @return mixed
      */
     public function getCookies()
     {
         return $this->cookies;
+    }
+
+    /**
+     * Connected Getter
+     * @return mixed
+     */
+    public function getConnected()
+    {
+        return $this->connected;
+    }
+
+    /**
+     * Host Getter
+     * @return mixed
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
+     * Port Getter
+     * @return mixed
+     */
+    public function getPort()
+    {
+        return $this->port;
+    }
+
+    /**
+     * Ssl Getter
+     * @return mixed
+     */
+    public function getSsl()
+    {
+        return $this->ssl;
+    }
+
+    /**
+     * Setting Getter
+     * @return mixed
+     */
+    public function getSetting()
+    {
+        return $this->setting;
+    }
+
+    /**
+     * RequestMethod Getter
+     * @return mixed
+     */
+    public function getRequestMethod()
+    {
+        return $this->requestMethod;
+    }
+
+    /**
+     * RequestHeaders Getter
+     * @return mixed
+     */
+    public function getRequestHeaders()
+    {
+        return $this->requestHeaders;
+    }
+
+    /**
+     * RequestBody Getter
+     * @return mixed
+     */
+    public function getRequestBody()
+    {
+        return $this->requestBody;
+    }
+
+    /**
+     * UploadFiles Getter
+     * @return mixed
+     */
+    public function getUploadFiles()
+    {
+        return $this->uploadFiles;
+    }
+
+    /**
+     * DownloadFile Getter
+     * @return mixed
+     */
+    public function getDownloadFile()
+    {
+        return $this->downloadFile;
+    }
+
+    /**
+     * DownloadOffset Getter
+     * @return mixed
+     */
+    public function getDownloadOffset()
+    {
+        return $this->downloadOffset;
+    }
+
+    /**
+     * Client Getter
+     * @return mixed
+     */
+    public function getClient()
+    {
+        return $this->client;
+    }
+
+    /**
+     * Client Setter
+     * @param mixed $client
+     */
+    public function setClient($client): void
+    {
+        $this->client = $client;
     }
 }
