@@ -374,6 +374,9 @@ class HttpClient
         $port = $this->url->getPort();
         $query = $this->url->getQuery();
         $scheme = strtolower($this->url->getScheme());
+        if(empty($scheme)){
+            $scheme = 'http';
+        }
 
         // 支持的scheme
         $allowSchemes = ['http' => 80, 'https' => 443, 'ws' => 80, 'wss' => 443];
