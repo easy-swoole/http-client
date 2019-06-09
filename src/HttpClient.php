@@ -697,15 +697,35 @@ class HttpClient
      * @param string|null $filename
      * @param int $offset
      * @param int $length
+     * @param array|string $extraPostData
      * @return Response
      * @throws InvalidUrl
      */
-    public function uploadByFileRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0)
+    public function uploadByFileRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0, $extraPostData = null)
     {
         $client = $this->getCoroutineClient();
         $client->addFile($uploadFile, $uploadName, $mimeType, $filename, $offset, $length);
         $client->setMethod(HttpClient::METHOD_POST);
+
+        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
+        if (is_array($extraPostData)) {
+            $rawData = http_build_query($extraPostData);
+            $this->setContentTypeFormUrlencoded();
+        }
+
+        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
+        if (!empty($extraPostData)) {
+            $client->setData($extraPostData);
+            $this->setHeader('Content-Length', strlen($extraPostData));
+        }
+
         $client->execute($this->url->getFullPath());
+
+        // 如果不设置保持长连接则直接关闭当前链接
+        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
+            $client->close();
+        }
+
         return $this->createHttpResponse($client);
     }
 
@@ -715,15 +735,35 @@ class HttpClient
      * @param string $uploadName
      * @param string|null $mimeType
      * @param string|null $filename
+     * @param array|string $extraPostData
      * @return Response
      * @throws InvalidUrl
      */
-    public function uploadByStringRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null)
+    public function uploadByStringRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, $extraPostData = null)
     {
         $client = $this->getCoroutineClient();
         $client->addData($uploadFile, $uploadName, $mimeType, $filename);
         $client->setMethod(HttpClient::METHOD_POST);
+
+        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
+        if (is_array($extraPostData)) {
+            $rawData = http_build_query($extraPostData);
+            $this->setContentTypeFormUrlencoded();
+        }
+
+        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
+        if (!empty($extraPostData)) {
+            $client->setData($extraPostData);
+            $this->setHeader('Content-Length', strlen($extraPostData));
+        }
+
         $client->execute($this->url->getFullPath());
+
+        // 如果不设置保持长连接则直接关闭当前链接
+        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
+            $client->close();
+        }
+
         return $this->createHttpResponse($client);
     }
 
