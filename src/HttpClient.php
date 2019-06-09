@@ -121,6 +121,9 @@ class HttpClient
     public function setUrl(string $url): HttpClient
     {
         $info = parse_url($url);
+        if (empty($info['scheme'])) {
+            $info = parse_url('//' . $url); // 防止无scheme导致的host解析异常 默认作为http处理
+        }
         $this->url = new Url($info);
         if (empty($this->url->getHost())) {
             throw new InvalidUrl("HttpClient: {$url} is invalid");
@@ -379,7 +382,7 @@ class HttpClient
         $allowSchemes = ['http' => 80, 'https' => 443, 'ws' => 80, 'wss' => 443];
 
         // 只允许进行支持的请求
-        if (array_key_exists($scheme, $allowSchemes)) {
+        if (!array_key_exists($scheme, $allowSchemes)) {
             throw new InvalidUrl("HttpClient: Clients are only allowed to initiate HTTP(WS) or HTTPS(WSS) requests");
         }
 
@@ -390,7 +393,7 @@ class HttpClient
 
         // 如果端口是空的 那么根据协议自动补全端口 否则使用原来的端口
         if (empty($port)) {
-            $port = $scheme === $allowSchemes[$scheme];
+            $port = isset($allowSchemes[$scheme]) ? $allowSchemes[$scheme] : 80;
             $this->url->setPort($port);
         }
 
