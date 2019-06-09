@@ -377,7 +377,7 @@ class HttpClient
         $port = $this->url->getPort();
         $query = $this->url->getQuery();
         $scheme = strtolower($this->url->getScheme());
-        if(empty($scheme)){
+        if (empty($scheme)) {
             $scheme = 'http';
         }
 
@@ -704,6 +704,8 @@ class HttpClient
     {
         $client = $this->getCoroutineClient();
         $client->addFile($uploadFile, $uploadName, $mimeType, $filename, $offset, $length);
+        $client->setMethod(HttpClient::METHOD_POST);
+        $client->execute($this->url->getFullPath());
         return $this->createHttpResponse($client);
     }
 
@@ -720,6 +722,8 @@ class HttpClient
     {
         $client = $this->getCoroutineClient();
         $client->addData($uploadFile, $uploadName, $mimeType, $filename);
+        $client->setMethod(HttpClient::METHOD_POST);
+        $client->execute($this->url->getFullPath());
         return $this->createHttpResponse($client);
     }
 
