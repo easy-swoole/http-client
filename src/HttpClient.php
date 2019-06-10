@@ -992,7 +992,7 @@ class HttpClient
     public function post($data, $contentType = null)
     {
         // 设置请求头
-        if (empty($contentType)) {
+        if (!empty($contentType) && is_string($contentType)) {
             $this->setContentType($contentType);
         } else {
             $this->setContentTypeFormUrlencoded();
