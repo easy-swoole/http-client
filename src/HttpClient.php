@@ -496,7 +496,6 @@ class HttpClient
             $this->setContentType($contentType);
         }
         $client->execute($this->url->getFullPath());
-        response:
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
             $client->close();
