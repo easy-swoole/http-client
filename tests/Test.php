@@ -94,4 +94,12 @@ class Test extends TestCase
         $this->assertEquals("head",$json['HEADER']['head']);
         $this->assertEquals("cook",$json['COOKIE']['cookie1']);
     }
+
+    function testPostXml()
+    {
+        $client = new HttpClient($this->url);
+        $response = $client->postXml('<xml></xml>');
+        $json = json_decode($response->getBody(),true);
+        $this->assertEquals('<xml></xml>',$json['RAW']);
+    }
 }
