@@ -765,4 +765,14 @@ class HttpClient
     {
         return $this->getClient()->recv($timeout);
     }
+
+    function __destruct()
+    {
+        if($this->httpClient instanceof Client){
+            if($this->httpClient->connected){
+                $this->httpClient->close();
+            }
+            $this->httpClient = null;
+        }
+    }
 }
