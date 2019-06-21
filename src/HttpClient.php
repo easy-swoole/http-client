@@ -339,19 +339,7 @@ class HttpClient
     // --------  辅助操作方法  --------
 
     /**
-     * 设置当前的Client
-     * @param Client $client
-     * @return $this
-     */
-    public function setClient(Client $client)
-    {
-        $this->httpClient = $client;
-        return $this;
-    }
-
-    /**
      * 获取当前的Client
-     * 为了兼容以前的写法提供别名方法
      * @return Client
      * @throws InvalidUrl
      */
@@ -364,7 +352,7 @@ class HttpClient
      * 解析当前的请求Url
      * @throws InvalidUrl
      */
-    public function parserUrlInfo()
+    protected function parserUrlInfo()
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
@@ -418,7 +406,7 @@ class HttpClient
      * @return Client
      * @throws InvalidUrl
      */
-    public function getCoroutineClient(): Client
+    protected function getCoroutineClient(): Client
     {
         if ($this->httpClient instanceof Client) {
             $this->prepareCoroutineClient($this->httpClient);
@@ -436,7 +424,7 @@ class HttpClient
      * 准备当前的Client
      * @param Client $client
      */
-    public function prepareCoroutineClient(Client $client)
+    protected function prepareCoroutineClient(Client $client)
     {
         // 合并cookie设置
         $client->setCookies((array)$this->cookies + (array)$client->cookies);
@@ -530,19 +518,18 @@ class HttpClient
      */
     public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
-        $client = $this->getCoroutineClient();
+        $client = $this->getClient();
         $client->setMethod($httpMethod);
-
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
         if (is_array($rawData)) {
-            $rawData = http_build_query($rawData);
-            $this->setContentTypeFormUrlencoded();
+            $this->setContentTypeFormData();
         }
 
         // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
         if (!empty($rawData)) {
             $client->setData($rawData);
-            $this->setHeader('Content-Length', strlen($rawData));
+            if(is_string($rawData)){
+                $this->setHeader('Content-Length', strlen($rawData));
+            }
         }
 
         // 设置ContentType(如果未设置默认为空的)
@@ -560,8 +547,6 @@ class HttpClient
         return $this->createHttpResponse($client);
     }
 
-    // --------  以下四种方法不需要设置请求BODY数据  --------
-
     /**
      * 快速发起GET请求
      * 设置的请求头会合并到本次请求中
@@ -569,7 +554,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function getRequest(array $headers = []): Response
+    public function get(array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_GET);
     }
@@ -580,7 +565,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function headRequest(array $headers = []): Response
+    public function head(array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_HEAD);
 
@@ -592,7 +577,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function traceRequest(array $headers = []): Response
+    public function trace(array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_TRACE);
 
@@ -604,7 +589,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function deleteRequest(array $headers = []): Response
+    public function delete(array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_DELETE);
 
@@ -619,7 +604,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function putRequest($data = null, array $headers = []): Response
+    public function put($data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PUT, $data);
     }
@@ -631,7 +616,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postRequest($data = null, array $headers = []): Response
+    public function post($data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data);
     }
@@ -643,7 +628,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function patchRequest($data = null, array $headers = []): Response
+    public function patch($data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PATCH, $data);
     }
@@ -656,7 +641,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function optionsRequest($data = null, array $headers = []): Response
+    public function options($data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_OPTIONS, $data);
     }
@@ -670,9 +655,9 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postXmlRequest(string $data = null, array $headers = []): Response
+    public function postXml(string $data = null, array $headers = []): Response
     {
-        return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PATCH, $data, HttpClient::CONTENT_TYPE_APPLICATION_XML);
+        return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_XML);
     }
 
     /**
@@ -682,9 +667,9 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postJsonRequest(string $data = null, array $headers = []): Response
+    public function postJson(string $data = null, array $headers = []): Response
     {
-        return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PATCH, $data, HttpClient::CONTENT_TYPE_APPLICATION_JSON);
+        return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_JSON);
     }
 
     // -------- 针对上传下载提供快捷操作方法  --------
@@ -703,7 +688,7 @@ class HttpClient
      */
     public function uploadByFileRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0, $extraPostData = null)
     {
-        $client = $this->getCoroutineClient();
+        $client = $this->getClient();
         $client->addFile($uploadFile, $uploadName, $mimeType, $filename, $offset, $length);
         $client->setMethod(HttpClient::METHOD_POST);
 
@@ -804,7 +789,6 @@ class HttpClient
         return $response ? $this->createHttpResponse($client) : false;
     }
 
-    // --------  设置本次请求参数  --------
 
     /**
      * 设置请求头集合
@@ -931,103 +915,5 @@ class HttpClient
     public function recv(float $timeout = 1.0): Frame
     {
         return $this->httpClient->recv($timeout);
-    }
-
-    // --------  以下旧版方法 目前保持兼容 逐步废弃  --------
-
-    /**
-     * 执行一次请求
-     * @param float|null $timeout
-     * @return Response
-     * @throws InvalidUrl
-     * @deprecated 为了兼容旧版 将在近期版本中废弃
-     */
-    public function exec(?float $timeout = null): Response
-    {
-        if ($timeout !== null) {
-            $this->setTimeout($timeout);
-        }
-
-        $client = $this->getCoroutineClient();
-        $this->prepareCoroutineClient($client);
-
-        // 直接添加文件
-        if (count($this->postFiles)) {
-            foreach ($this->postFiles as $file) {
-                $client->addFile(...$file);
-            }
-        }
-
-        // 字符串添加文件
-        if (count($this->postDataByAddData)) {
-            foreach ($this->postDataByAddData as $addDatum) {
-                $client->addData(...$addDatum);
-            }
-        }
-
-        // 设置POST内容
-        if (!empty($this->postData)) {
-            $client->setData($this->postData);
-        }
-
-        // 执行请求并取得响应
-        $client->execute($this->url->getFullPath());
-        $response = $this->createHttpResponse($client);
-
-        // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
-            $client->close();
-        }
-
-        return $response;
-    }
-
-    /**
-     * 设置POST的数据
-     * @param array|string $data
-     * @param null $contentType
-     * @return HttpClient
-     * @deprecated 为了兼容旧版 将在近期版本中废弃
-     */
-    public function post($data, $contentType = null)
-    {
-        // 设置请求头
-        if (!empty($contentType) && is_string($contentType)) {
-            $this->setContentType($contentType);
-        } else {
-            $this->setContentTypeFormUrlencoded();
-        }
-
-        // 设置请求体
-        if (is_array($data)) {
-            $data = http_build_query($data);
-        }
-
-        $this->postData = $data;
-        return $this;
-    }
-
-    /**
-     * 设置POST JSON数据
-     * @param string $json
-     * @return HttpClient
-     * @deprecated 为了兼容旧版 将在近期版本中废弃
-     */
-    public function postJSON(string $json): HttpClient
-    {
-        $this->post($json, HttpClient::CONTENT_TYPE_TEXT_JSON);
-        return $this;
-    }
-
-    /**
-     * 设置POST XML数据
-     * @param string $xml
-     * @return HttpClient
-     * @deprecated 为了兼容旧版 将在近期版本中废弃
-     */
-    public function postXML(string $xml): HttpClient
-    {
-        $this->post($xml, HttpClient::CONTENT_TYPE_TEXT_XML);
-        return $this;
     }
 }

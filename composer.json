@@ -13,14 +13,16 @@
   ],
   "require": {
     "php": ">=7.1.0",
-    "easyswoole/spl": "^1.1"
+    "easyswoole/spl": "^1.1",
+    "easyswoole/phpunit": "^1.0"
   },
   "require-dev": {
         "easyswoole/swoole-ide-helper": "^1.2"
   },
   "autoload": {
     "psr-4": {
-      "EasySwoole\\HttpClient\\": "src/"
+      "EasySwoole\\HttpClient\\": "src/",
+      "EasySwoole\\HttpClient\\Test\\": "tests/"
     }
   }
 }
