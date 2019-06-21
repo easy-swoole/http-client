@@ -24,6 +24,15 @@ class Test extends TestCase
         $this->assertEquals(['arg1'=>1,'arg2'=>2],$json['GET']);
     }
 
+    function testOptions()
+    {
+        $client = new HttpClient($this->url);
+        $response = $client->options(['op'=>'op1'],['head'=>'head']);
+        $json = json_decode($response->getBody(),true);
+        $this->assertEquals("OPTIONS",$json['REQUEST_METHOD']);
+        $this->assertEquals("head",$json['HEADER']['head']);
+    }
+
     function testPost()
     {
         $client = new HttpClient($this->url);
@@ -57,5 +66,32 @@ class Test extends TestCase
         $raw = $json["RAW"];
         $raw = json_decode($raw,true);
         $this->assertEquals(['json'=>'json1'],$raw);
+    }
+
+    function testPostFile()
+    {
+        $client = new HttpClient($this->url);
+        $response = $client->post([
+            'post1'=>'post1',
+            'file'=> new \CURLFile(__FILE__)
+        ]);
+        $json = json_decode($response->getBody(),true);
+        $this->assertEquals("POST",$json['REQUEST_METHOD']);
+        $this->assertEquals([ 'post1'=>'post1'],$json['POST']);
+        $this->assertEquals(['arg1'=>1,'arg2'=>2],$json['GET']);
+        $this->assertEquals('Test.php',$json['FILE']['file']['name']);
+    }
+
+    function testCookies()
+    {
+        $client = new HttpClient($this->url);
+        $client->addCookies([
+            'cookie1'=>'cook'
+        ]);
+        $response = $client->get(['head'=>'head']);
+        $json = json_decode($response->getBody(),true);
+        $this->assertEquals("GET",$json['REQUEST_METHOD']);
+        $this->assertEquals("head",$json['HEADER']['head']);
+        $this->assertEquals("cook",$json['COOKIE']['cookie1']);
     }
 }

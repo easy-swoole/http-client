@@ -55,24 +55,6 @@ class HttpClient
     protected $clientSetting = [];
 
     /**
-     * post 方法
-     * @var array
-     */
-    protected $postData = null;
-
-    /**
-     * addFile 方法
-     * @var array
-     */
-    protected $postFiles = [];
-
-    /**
-     * addData 方法
-     * @var array
-     */
-    protected $postDataByAddData = [];
-
-    /**
      * 请求携带的Cookies
      * @var array
      */
@@ -336,16 +318,21 @@ class HttpClient
         return $this;
     }
 
-    // --------  辅助操作方法  --------
-
-    /**
-     * 获取当前的Client
-     * @return Client
-     * @throws InvalidUrl
-     */
     public function getClient(): Client
     {
-        return $this->getCoroutineClient();
+        if ($this->httpClient instanceof Client) {
+            return $this->httpClient;
+        }
+        $url = $this->parserUrlInfo();
+        $this->httpClient = new Client($url->getHost(), $url->getPort(), $url->getIsSsl());
+        $this->httpClient->set($this->clientSetting);
+        return $this->getClient();
+    }
+
+    public function setMethod(string $method):HttpClient
+    {
+        $this->getClient()->setMethod($method);
+        return $this;
     }
 
     /**
@@ -398,37 +385,6 @@ class HttpClient
         $query = empty($query) ? '' : '?' . $query;
         $this->url->setFullPath($path . $query);
         return $this->url;
-    }
-
-    /**
-     * 获取一个协程客户端
-     * 为连续请求修改为如果当前没有设置Client则新建
-     * @return Client
-     * @throws InvalidUrl
-     */
-    protected function getCoroutineClient(): Client
-    {
-        if ($this->httpClient instanceof Client) {
-            $this->prepareCoroutineClient($this->httpClient);
-            return $this->httpClient;
-        }
-
-        $url = $this->parserUrlInfo();
-        $this->httpClient = new Client($url->getHost(), $url->getPort(), $url->getIsSsl());
-        $this->prepareCoroutineClient($this->httpClient);
-        return $this->httpClient;
-
-    }
-
-    /**
-     * 准备当前的Client
-     * @param Client $client
-     */
-    protected function prepareCoroutineClient(Client $client)
-    {
-        // 合并cookie设置
-        $client->setCookies((array)$this->cookies + (array)$client->cookies);
-        $client->setHeaders($this->header); // 响应回来的是响应头 不要设置进去
     }
 
     /**
@@ -504,7 +460,6 @@ class HttpClient
         return $response;
     }
 
-    // --------  快捷发起请求  --------
 
     /**
      * 进行一次RAW请求
@@ -516,34 +471,36 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
+    protected function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
         $client = $this->getClient();
-        $client->setMethod($httpMethod);
-        if (is_array($rawData)) {
-            $this->setContentTypeFormData();
-        }
-
-        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
-        if (!empty($rawData)) {
-            $client->setData($rawData);
-            if(is_string($rawData)){
-                $this->setHeader('Content-Length', strlen($rawData));
+        //预处理。合并cookie 和header
+        $this->setMethod($httpMethod);
+        $client->setHeaders($this->header);
+        $client->setCookies((array)$this->cookies + (array)$client->cookies);
+        if($httpMethod == self::METHOD_POST){
+            if(is_array($rawData)){
+                foreach ($rawData as $key => $item){
+                    if($item instanceof \CURLFile){
+                        $client->addFile($item->getFilename(),$key,$item->getMimeType(),$item->getPostFilename());
+                        unset($rawData[$key]);
+                    }
+                }
             }
+            $client->setData($rawData);
         }
-
-        // 设置ContentType(如果未设置默认为空的)
+        if(is_string($rawData)){
+            $this->setHeader('Content-Length', strlen($rawData));
+        }
         if (!empty($contentType)) {
             $this->setContentType($contentType);
         }
-
         $client->execute($this->url->getFullPath());
-
+        response:
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
             $client->close();
         }
-
         return $this->createHttpResponse($client);
     }
 
@@ -672,86 +629,6 @@ class HttpClient
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_JSON);
     }
 
-    // -------- 针对上传下载提供快捷操作方法  --------
-
-    /**
-     * 上传本地文件
-     * @param string $uploadFile
-     * @param string $uploadName
-     * @param string|null $mimeType
-     * @param string|null $filename
-     * @param int $offset
-     * @param int $length
-     * @param array|string $extraPostData
-     * @return Response
-     * @throws InvalidUrl
-     */
-    public function uploadByFileRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0, $extraPostData = null)
-    {
-        $client = $this->getClient();
-        $client->addFile($uploadFile, $uploadName, $mimeType, $filename, $offset, $length);
-        $client->setMethod(HttpClient::METHOD_POST);
-
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
-        if (is_array($extraPostData)) {
-            $rawData = http_build_query($extraPostData);
-            $this->setContentTypeFormUrlencoded();
-        }
-
-        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
-        if (!empty($extraPostData)) {
-            $client->setData($extraPostData);
-            $this->setHeader('Content-Length', strlen($extraPostData));
-        }
-
-        $client->execute($this->url->getFullPath());
-
-        // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
-            $client->close();
-        }
-
-        return $this->createHttpResponse($client);
-    }
-
-    /**
-     * 使用字符串构建上传
-     * @param string $uploadFile
-     * @param string $uploadName
-     * @param string|null $mimeType
-     * @param string|null $filename
-     * @param array|string $extraPostData
-     * @return Response
-     * @throws InvalidUrl
-     */
-    public function uploadByStringRequest(string $uploadFile, string $uploadName = 'upload', string $mimeType = null, string $filename = null, $extraPostData = null)
-    {
-        $client = $this->getCoroutineClient();
-        $client->addData($uploadFile, $uploadName, $mimeType, $filename);
-        $client->setMethod(HttpClient::METHOD_POST);
-
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
-        if (is_array($extraPostData)) {
-            $rawData = http_build_query($extraPostData);
-            $this->setContentTypeFormUrlencoded();
-        }
-
-        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
-        if (!empty($extraPostData)) {
-            $client->setData($extraPostData);
-            $this->setHeader('Content-Length', strlen($extraPostData));
-        }
-
-        $client->execute($this->url->getFullPath());
-
-        // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
-            $client->close();
-        }
-
-        return $this->createHttpResponse($client);
-    }
-
     /**
      * 文件下载直接落盘不走Body拼接更节省内存
      * 可以通过偏移量(offset=原文件字节数)实现APPEND的效果
@@ -765,7 +642,7 @@ class HttpClient
      */
     public function download(string $filename, int $offset = 0, $httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null)
     {
-        $client = $this->getCoroutineClient();
+        $client = $this->getClient();
         $client->setMethod($httpMethod);
 
         // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
@@ -855,33 +732,6 @@ class HttpClient
         $this->cookies[$key] = $value;
         return $this;
     }
-
-    /**
-     * 添加上传文件
-     * 与SwooleClient的顺序一致
-     * string $path, string $name, string $mimeType = null, string $filename = null, int $offset = 0, int $length = 0
-     * @param mixed ...$args
-     * @return HttpClient
-     */
-    public function addFile(...$args): HttpClient
-    {
-        $this->postFiles[] = $args;
-        return $this;
-    }
-
-    /**
-     * 使用字符串构建上传数据
-     * 与SwooleClient的顺序一致
-     * string $data, string $name, string $mimeType = null, string $filename = null
-     * @param mixed ...$args
-     * @return HttpClient
-     */
-    public function addData(...$args): HttpClient
-    {
-        $this->postDataByAddData[] = $args;
-        return $this;
-    }
-
     /**
      * 升级为Websocket请求
      * @param bool $mask
@@ -891,8 +741,7 @@ class HttpClient
     public function upgrade(bool $mask = true): bool
     {
         $this->clientSetting['websocket_mask'] = $mask;
-        $client = $this->getCoroutineClient();
-        $this->prepareCoroutineClient($client);
+        $client = $this->getClient();
         return $client->upgrade($this->url->getFullPath());
     }
 
@@ -903,7 +752,7 @@ class HttpClient
      */
     public function push(Frame $frame): bool
     {
-        return $this->httpClient->push($frame);
+        return $this->getClient()->push($frame);
     }
 
     /**
@@ -914,6 +763,6 @@ class HttpClient
      */
     public function recv(float $timeout = 1.0): Frame
     {
-        return $this->httpClient->recv($timeout);
+        return $this->getClient()->recv($timeout);
     }
 }
