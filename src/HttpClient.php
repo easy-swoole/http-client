@@ -486,6 +486,7 @@ class HttpClient
                         unset($rawData[$key]);
                     }
                 }
+                $client->setData($rawData);
             }else if($rawData !== null){
                 $client->setData($rawData);
             }
