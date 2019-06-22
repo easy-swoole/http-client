@@ -764,7 +764,7 @@ class HttpClient
      * @param float $timeout
      * @return Frame
      */
-    public function recv(float $timeout = 1.0): Frame
+    public function recv(float $timeout = 1.0)
     {
         return $this->getClient()->recv($timeout);
     }
