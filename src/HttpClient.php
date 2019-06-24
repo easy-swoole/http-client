@@ -92,6 +92,16 @@ class HttpClient
         $this->setConnectTimeout(5);
     }
 
+    public function setQuery(?array $data = null)
+    {
+        if($data){
+            $old = $this->url->getQuery();
+            parse_str($old,$old);
+            $this->url->setQuery(http_build_query($data + $old));
+        }
+        return $this;
+    }
+
     // --------  客户端配置设置方法  --------
 
     /**
@@ -339,7 +349,7 @@ class HttpClient
      * 解析当前的请求Url
      * @throws InvalidUrl
      */
-    protected function parserUrlInfo()
+    protected function parserUrlInfo(?array $qurey = null)
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
@@ -355,7 +365,6 @@ class HttpClient
         if (empty($scheme)) {
             $scheme = 'http';
         }
-
         // 支持的scheme
         $allowSchemes = ['http' => 80, 'https' => 443, 'ws' => 80, 'wss' => 443];
 

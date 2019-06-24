@@ -17,11 +17,12 @@ class Test extends TestCase
     function testGet()
     {
         $client = new HttpClient($this->url);
+        $client->setQuery(['arg2'=>3,'q'=>2]);
         $response = $client->get();
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("GET", $json['REQUEST_METHOD']);
         $this->assertEquals([], $json['POST']);
-        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
+        $this->assertEquals(['arg1' => 1, 'arg2' => 3,'q'=>2], $json['GET']);
     }
 
     function testHead()
