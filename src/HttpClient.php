@@ -709,9 +709,9 @@ class HttpClient
      * @param string $value
      * @return HttpClient
      */
-    public function setHeader(string $key, string $value,$keyTolower = true): HttpClient
+    public function setHeader(string $key, string $value,$strtolower = true): HttpClient
     {
-        if($keyTolower){
+        if($strtolower){
             $this->header[strtolower($key)] = strtolower($value);
         }else{
             $this->header[$key] = $value;
