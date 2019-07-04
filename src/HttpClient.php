@@ -71,11 +71,11 @@ class HttpClient
      * @var array
      */
     protected $header = [
-        "User-Agent"      => 'EasySwooleHttpClient/0.1',
-        'Accept'          => 'text/html,application/xhtml+xml,application/xml',
-        'Accept-Encoding' => 'gzip',
-        'Pragma'          => 'no-cache',
-        'Cache-Control'   => 'no-cache'
+        "user-agent"      => 'EasySwooleHttpClient/0.1',
+        'accept'          => 'text/html,application/xhtml+xml,application/xml',
+        'accept-encoding' => 'gzip',
+        'pragma'          => 'no-cache',
+        'cache-control'   => 'no-cache'
     ];
 
     /**
