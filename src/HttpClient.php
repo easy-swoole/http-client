@@ -714,7 +714,7 @@ class HttpClient
         if($keyTolower){
             $this->header[strtolower($key)] = strtolower($value);
         }else{
-            $this->header[$key] = strtolower($value);
+            $this->header[$key] = $value;
         }
         return $this;
     }
