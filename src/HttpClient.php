@@ -764,12 +764,12 @@ class HttpClient
 
     /**
      * 发送数据
-     * @param Frame $frame
+     * @param string|Frame $data
      * @return bool
      */
-    public function push(Frame $frame): bool
+    public function push($data): bool
     {
-        return $this->getClient()->push($frame);
+        return $this->getClient()->push($data);
     }
 
     /**
