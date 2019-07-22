@@ -683,9 +683,10 @@ class HttpClient
      * 设置请求头集合
      * @param array $header
      * @param bool $isMerge
+     * @param bool strtolower
      * @return HttpClient
      */
-    public function setHeaders(array $header, $isMerge = true): HttpClient
+    public function setHeaders(array $header, $isMerge = true, $strtolower = true): HttpClient
     {
         if (empty($header)) {
             return $this;
@@ -697,7 +698,7 @@ class HttpClient
         }
 
         foreach ($header as $name => $value) {
-            $this->setHeader($name, $value);
+            $this->setHeader($name, $value, $strtolower);
         }
         return $this;
     }
@@ -707,9 +708,10 @@ class HttpClient
      * 根据 RFC 请求头不区分大小写 会全部转成小写
      * @param string $key
      * @param string $value
+     * @param bool strtolower
      * @return HttpClient
      */
-    public function setHeader(string $key, string $value,$strtolower = true): HttpClient
+    public function setHeader(string $key, string $value, $strtolower = true): HttpClient
     {
         if($strtolower){
             $this->header[strtolower($key)] = strtolower($value);
