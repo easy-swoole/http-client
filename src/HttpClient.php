@@ -65,6 +65,24 @@ class HttpClient
      * @var bool
      */
     protected $enableSSL = false;
+    
+    /**
+     * 允许重定向
+     * @var bool
+     */
+    protected $allowFollowLocation = false;
+    
+    /**
+     * 已重定向次数
+     * @var int
+     */
+    protected $followedRedirs = 0;
+    
+    /**
+     * 最大重定向次数
+     * @var int
+     */
+    protected $maxRedirs = 1;
 
     /**
      * 默认请求头
@@ -121,6 +139,25 @@ class HttpClient
             throw new InvalidUrl("HttpClient: {$url} is invalid");
         }
         return $this;
+    }
+    
+    /**
+     * true时会根据服务器返回HTTP头中的"Location:"重定向
+     * 默认重定向1次，可与setMaxRedirs方法配合使用
+     * @param bool $follow
+     */
+    public function setAllowFollowLocation(bool $follow = true)
+    {
+        $this->allowFollowLocation = $follow;
+    }
+    
+    /**
+     * 设置最大重定向次数
+     * @param int $maxRedirs
+     */
+    public function setMaxRedirs(int $maxRedirs)
+    {
+        $this->maxRedirs = $maxRedirs;
     }
 
     /**
@@ -512,6 +549,17 @@ class HttpClient
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
             $client->close();
+        }
+        // 处理重定向
+        if ($client->statusCode === 301 || $client->statusCode === 302) {
+            if ($this->allowFollowLocation) {
+                if ($this->followedRedirs < $this->maxRedirs) {
+                    $this->followedRedirs++;
+                    $this->httpClient = '';
+                    $this->setUrl($client->headers['location']);
+                    return $this->rawRequest($httpMethod, $rawData, $contentType);
+                }
+            }
         }
         return $this->createHttpResponse($client);
     }
