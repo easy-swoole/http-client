@@ -796,10 +796,9 @@ class HttpClient
     
     /**
      * 返回错误信息
-     * @param int $errCode
      * @return string
      */
-    public function getErrMsg(int): string
+    public function getErrMsg(): string
     {
         return socket_strerror($this->getErrCode());
     }
