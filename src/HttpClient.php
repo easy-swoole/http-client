@@ -784,13 +784,41 @@ class HttpClient
     {
         return $this->getClient()->recv($timeout);
     }
+    
+    /**
+     * 返回错误码
+     * @return int
+     */
+    public function getErrCode(): int
+    {
+        return $this->getClient()->errCode();
+    }
+    
+    /**
+     * 返回错误信息
+     * @param int $errCode
+     * @return string
+     */
+    public function getErrMsg(int): string
+    {
+        return socket_strerror($this->getErrCode());
+    }
+    
+    /**
+     * 关闭 httpClient 发起无需重新new,post, get, upgrade 将会重连
+     */
+    public function close()
+    {
+        if($this->httpClient->connected){
+            $this->httpClient->close();
+        }
+    }
+    
 
     function __destruct()
     {
         if($this->httpClient instanceof Client){
-            if($this->httpClient->connected){
-                $this->httpClient->close();
-            }
+            $this->close();
             $this->httpClient = null;
         }
     }
