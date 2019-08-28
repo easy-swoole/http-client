@@ -791,7 +791,7 @@ class HttpClient
      */
     public function getErrCode(): int
     {
-        return $this->getClient()->errCode();
+        return $this->getClient()->errCode;
     }
     
     /**
