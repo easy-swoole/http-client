@@ -805,7 +805,10 @@ class HttpClient
     }
     
     /**
-     * 关闭 httpClient 发起无需重新new,post, get, upgrade 将会重连
+     * 关闭 httpClient 发起无需重新new
+     * http-client 需重新调 post, get等
+     * webSocket-client 需重新调 upgrade 
+     * 底层会重新连接服务器
      */
     public function close()
     {
