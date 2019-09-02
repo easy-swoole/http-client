@@ -66,6 +66,16 @@ class HttpClient
      */
     protected $enableSSL = false;
 
+
+    protected $followLocation = 3;
+    protected $redirected = 0;
+
+    function enableFollowLocation(int $maxRedirect = 5):int
+    {
+        $this->followLocation = $maxRedirect;
+        return $this->followLocation;
+    }
+
     /**
      * 默认请求头
      * @var array
@@ -512,6 +522,14 @@ class HttpClient
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
             $client->close();
+        }
+        // 处理重定向
+        if (($client->statusCode == 301 || $client->statusCode == 302) && (($this->followLocation > 0) && ($this->redirected < $this->followLocation))) {
+            $this->redirected++;
+            $this->setUrl($client->headers['location']);
+            return $this->rawRequest($httpMethod, $rawData, $contentType);
+        }else{
+            $this->redirected = 0;
         }
         return $this->createHttpResponse($client);
     }
