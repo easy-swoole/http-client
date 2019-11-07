@@ -526,7 +526,18 @@ class HttpClient
         // 处理重定向
         if (($client->statusCode == 301 || $client->statusCode == 302) && (($this->followLocation > 0) && ($this->redirected < $this->followLocation))) {
             $this->redirected++;
-            $this->setUrl($client->headers['location']);
+            $location = $client->headers['location'];
+            $info = parse_url($location);
+            // scheme 为空 没有域名
+            if (empty($info['scheme']) && empty($info['host'])) {
+                $this->url->setPath($location);
+                $this->parserUrlInfo();
+            } else {
+                // 去除//开头的跳转域名
+                $location = ltrim($location,'//');
+                $this->setUrl($location);
+                $this->httpClient = null;
+            }
             return $this->rawRequest($httpMethod, $rawData, $contentType);
         }else{
             $this->redirected = 0;
