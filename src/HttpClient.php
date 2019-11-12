@@ -495,7 +495,6 @@ class HttpClient
         $client = $this->getClient();
         //预处理。合并cookie 和header
         $this->setMethod($httpMethod);
-        $client->setHeaders($this->header);
         $client->setCookies((array)$this->cookies + (array)$client->cookies);
         if($httpMethod == self::METHOD_POST){
             if(is_array($rawData)){
@@ -518,6 +517,7 @@ class HttpClient
         if (!empty($contentType)) {
             $this->setContentType($contentType);
         }
+        $client->setHeaders($this->header);
         $client->execute($this->url->getFullPath());
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
