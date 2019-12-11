@@ -11,17 +11,17 @@ class Test extends TestCase
     /*
      * url内容请看 tests/index.php
      */
-//    private $url = 'http://docker.local.com/index.php?arg1=1&arg2=2';
-    private $url = 'http://test.php20.cn/index.php?arg1=1&arg2=2';
+    private $url = 'http://docker.local.com/index.php?arg1=1&arg2=2';
 
     function testGet()
     {
         $client = new HttpClient($this->url);
+        $client->setQuery(['arg2'=>3,'q'=>2]);
         $response = $client->get();
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("GET", $json['REQUEST_METHOD']);
         $this->assertEquals([], $json['POST']);
-        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
+        $this->assertEquals(['arg1' => 1, 'arg2' => 3,'q'=>2], $json['GET']);
     }
 
     function testHead()

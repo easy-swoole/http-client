@@ -66,16 +66,26 @@ class HttpClient
      */
     protected $enableSSL = false;
 
+
+    protected $followLocation = 3;
+    protected $redirected = 0;
+
+    function enableFollowLocation(int $maxRedirect = 5):int
+    {
+        $this->followLocation = $maxRedirect;
+        return $this->followLocation;
+    }
+
     /**
      * 默认请求头
      * @var array
      */
     protected $header = [
-        "User-Agent"      => 'EasySwooleHttpClient/0.1',
-        'Accept'          => 'text/html,application/xhtml+xml,application/xml',
-        'Accept-Encoding' => 'gzip',
-        'Pragma'          => 'no-cache',
-        'Cache-Control'   => 'no-cache'
+        "user-agent"      => 'EasySwooleHttpClient/0.1',
+        'accept'          => '*/*',
+        'accept-encoding' => 'gzip',
+        'pragma'          => 'no-cache',
+        'cache-control'   => 'no-cache'
     ];
 
     /**
@@ -90,6 +100,16 @@ class HttpClient
         }
         $this->setTimeout(3);
         $this->setConnectTimeout(5);
+    }
+
+    public function setQuery(?array $data = null)
+    {
+        if($data){
+            $old = $this->url->getQuery();
+            parse_str($old,$old);
+            $this->url->setQuery(http_build_query($data + $old));
+        }
+        return $this;
     }
 
     // --------  客户端配置设置方法  --------
@@ -349,7 +369,7 @@ class HttpClient
      * 解析当前的请求Url
      * @throws InvalidUrl
      */
-    protected function parserUrlInfo()
+    protected function parserUrlInfo(?array $qurey = null)
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
@@ -365,7 +385,6 @@ class HttpClient
         if (empty($scheme)) {
             $scheme = 'http';
         }
-
         // 支持的scheme
         $allowSchemes = ['http' => 80, 'https' => 443, 'ws' => 80, 'wss' => 443];
 
@@ -486,7 +505,6 @@ class HttpClient
         $client = $this->getClient();
         //预处理。合并cookie 和header
         $this->setMethod($httpMethod);
-        $client->setHeaders($this->header);
         $client->setCookies((array)$this->cookies + (array)$client->cookies);
         if($httpMethod == self::METHOD_POST){
             if(is_array($rawData)){
@@ -509,10 +527,30 @@ class HttpClient
         if (!empty($contentType)) {
             $this->setContentType($contentType);
         }
+        $client->setHeaders($this->header);
         $client->execute($this->url->getFullPath());
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
             $client->close();
+        }
+        // 处理重定向
+        if (($client->statusCode == 301 || $client->statusCode == 302) && (($this->followLocation > 0) && ($this->redirected < $this->followLocation))) {
+            $this->redirected++;
+            $location = $client->headers['location'];
+            $info = parse_url($location);
+            // scheme 为空 没有域名
+            if (empty($info['scheme']) && empty($info['host'])) {
+                $this->url->setPath($location);
+                $this->parserUrlInfo();
+            } else {
+                // 去除//开头的跳转域名
+                $location = ltrim($location,'//');
+                $this->setUrl($location);
+                $this->httpClient = null;
+            }
+            return $this->rawRequest($httpMethod, $rawData, $contentType);
+        }else{
+            $this->redirected = 0;
         }
         return $this->createHttpResponse($client);
     }
@@ -684,9 +722,10 @@ class HttpClient
      * 设置请求头集合
      * @param array $header
      * @param bool $isMerge
+     * @param bool strtolower
      * @return HttpClient
      */
-    public function setHeaders(array $header, $isMerge = true): HttpClient
+    public function setHeaders(array $header, $isMerge = true, $strtolower = true): HttpClient
     {
         if (empty($header)) {
             return $this;
@@ -698,7 +737,7 @@ class HttpClient
         }
 
         foreach ($header as $name => $value) {
-            $this->setHeader($name, $value);
+            $this->setHeader($name, $value, $strtolower);
         }
         return $this;
     }
@@ -708,13 +747,19 @@ class HttpClient
      * 根据 RFC 请求头不区分大小写 会全部转成小写
      * @param string $key
      * @param string $value
+     * @param bool strtolower
      * @return HttpClient
      */
-    public function setHeader(string $key, string $value): HttpClient
+    public function setHeader(string $key, string $value, $strtolower = true): HttpClient
     {
-        $this->header[strtolower($key)] = strtolower($value);
+        if($strtolower){
+            $this->header[strtolower($key)] = strtolower($value);
+        }else{
+            $this->header[$key] = $value;
+        }
         return $this;
     }
+
 
     /**
      * 设置携带的Cookie集合
@@ -760,12 +805,12 @@ class HttpClient
 
     /**
      * 发送数据
-     * @param Frame $frame
+     * @param string|Frame $data
      * @return bool
      */
-    public function push(Frame $frame): bool
+    public function push($data): bool
     {
-        return $this->getClient()->push($frame);
+        return $this->getClient()->push($data);
     }
 
     /**
