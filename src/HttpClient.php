@@ -120,8 +120,12 @@ class HttpClient
      * @return HttpClient
      * @throws InvalidUrl
      */
-    public function setUrl(string $url): HttpClient
+    public function setUrl($url): HttpClient
     {
+        if ($url instanceof Url){
+            $this->url = $url;
+            return $this;
+        }
         $info = parse_url($url);
         if (empty($info['scheme'])) {
             $info = parse_url('//' . $url); // 防止无scheme导致的host解析异常 默认作为http处理
@@ -132,6 +136,7 @@ class HttpClient
         }
         return $this;
     }
+
 
     /**
      * 强制开启SSL
@@ -338,9 +343,15 @@ class HttpClient
         return $this;
     }
 
+
     public function getClient(): Client
     {
         if ($this->httpClient instanceof Client) {
+            $url = $this->parserUrlInfo();
+            $this->httpClient->host = $url->getHost();
+            $this->httpClient->port = $url->getPort();
+            $this->httpClient->ssl = $url->getIsSsl();
+            $this->httpClient->set($this->clientSetting);
             return $this->httpClient;
         }
         $url = $this->parserUrlInfo();
