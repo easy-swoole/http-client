@@ -137,6 +137,7 @@ class HttpClient
         return $this;
     }
 
+
     /**
      * 强制开启SSL
      * @param bool $enableSSL
@@ -342,6 +343,7 @@ class HttpClient
         return $this;
     }
 
+
     public function getClient(): Client
     {
         if ($this->httpClient instanceof Client) {
@@ -356,7 +358,6 @@ class HttpClient
         $this->httpClient = new Client($url->getHost(), $url->getPort(), $url->getIsSsl());
         $this->httpClient->set($this->clientSetting);
         return $this->getClient();
-
     }
 
     public function setMethod(string $method):HttpClient
