@@ -83,7 +83,6 @@ class HttpClient
     protected $header = [
         "user-agent"      => 'EasySwooleHttpClient/0.1',
         'accept'          => '*/*',
-        'accept-encoding' => 'gzip',
         'pragma'          => 'no-cache',
         'cache-control'   => 'no-cache'
     ];
