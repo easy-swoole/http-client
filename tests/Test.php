@@ -209,4 +209,13 @@ class Test extends TestCase
         $this->assertIsBool(true, !!$recvFrame);
         $this->assertEquals('call hello with arg:{"a":1}',$recvFrame->data);
     }
+
+    function testBasicAuth()
+    {
+        $httpClient = new HttpClient('http://localhost:8080/index.php');
+        $httpClient->setBasicAuth('admin', '111111');
+        $res = $httpClient->post();
+        $res = $res->getBody();
+        $this->assertEquals('success',$res);
+    }
 }
