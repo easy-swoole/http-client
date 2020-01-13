@@ -342,6 +342,12 @@ class HttpClient
         return $this;
     }
 
+    public function setBasicAuth(string $userName, string $password): HttpClient
+    {
+        $basicAuthToken = base64_encode("{$userName}:{$password}");
+        $this->setHeader('Authorization', "Basic {$basicAuthToken}", false);
+        return $this;
+    }
 
     public function getClient(): Client
     {
