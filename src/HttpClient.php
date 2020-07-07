@@ -810,13 +810,15 @@ class HttpClient
     }
 
     /**
-     * 发送数据
-     * @param string|Frame $data
+     * 发送数据（websocket）
+     * @param $data
+     * @param int $opcode
+     * @param bool $finish
      * @return bool
      */
-    public function push($data): bool
+    public function push($data,int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true): bool
     {
-        return $this->getClient()->push($data);
+        return $this->getClient()->push($data, $opcode, $finish);
     }
 
     /**
