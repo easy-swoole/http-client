@@ -811,7 +811,7 @@ class HttpClient
 
     /**
      * 发送数据（websocket）
-     * @param $data
+     * @param string|Frame $data
      * @param int $opcode
      * @param bool $finish
      * @return bool
