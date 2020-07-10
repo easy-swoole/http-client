@@ -12,13 +12,11 @@ namespace EasySwoole\HttpClient;
 use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Contract\ClientManager;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
-use EasySwoole\HttpClient\Traits\UriManager;
 use Swoole\Coroutine\Http\Client;
 use Swoole\WebSocket\Frame;
 
 class HttpClient
 {
-    use UriManager;
     // HTTP 1.0/1.1 标准请求方法
     const METHOD_GET = 'GET';
     const METHOD_PUT = 'PUT';
@@ -39,73 +37,47 @@ class HttpClient
     const CONTENT_TYPE_X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
 
     /**
-     * 客户端管理
      * @var ClientManager
      */
-    protected $clientManager;
+    protected $clientManager = \EasySwoole\HttpClient\Handler\Swoole\Client::class;
 
-    /**
-     * 协程客户端设置项
-     * @var array
-     */
-    protected $clientSetting = [];
-
-    /**
-     * 请求携带的Cookies
-     * @var array
-     */
-    protected $cookies = [];
-
-    /**
-     * 强制开启SSL请求
-     * @var bool
-     */
-    protected $enableSSL = false;
-
-
-    protected $followLocation = 3;
-    protected $redirected = 0;
-
-    function enableFollowLocation(int $maxRedirect = 5):int
-    {
-        $this->followLocation = $maxRedirect;
-        return $this->followLocation;
-    }
-
-    /**
-     * 默认请求头
-     * @var array
-     */
-    protected $header = [
-        "user-agent"      => 'EasySwooleHttpClient/0.1',
-        'accept'          => '*/*',
-        'pragma'          => 'no-cache',
-        'cache-control'   => 'no-cache'
-    ];
 
     /**
      * HttpClient constructor.
      * @param string|null $url
-     * @throws InvalidUrl
      */
-    public function __construct(?string $url = null)
+    public function __construct(string $url = null)
     {
-        if (!empty($url)) {
-            $this->setUrl($url);
-        }
-        $this->setTimeout(3);
-        $this->setConnectTimeout(5);
+        $this->clientManager = new $this->clientManager($url);
     }
 
     // --------  客户端配置设置方法  --------
 
     /**
-     * 强制开启SSL
-     * @param bool $enableSSL
+     * @return ClientManager
      */
-    public function setEnableSSL(bool $enableSSL = true)
+    public function getClientManager(): ClientManager
     {
-        $this->enableSSL = $enableSSL;
+        return $this->clientManager;
+    }
+
+    /**
+     * @param ClientManager $clientManager
+     */
+    public function setClientManager(ClientManager $clientManager): void
+    {
+        $this->clientManager = $clientManager;
+    }
+
+    public function enableFollowLocation(int $maxRedirect = 5): int
+    {
+        return $this->clientManager->getRequest()->setFollowLocation($maxRedirect);
+    }
+
+    public function setQuery(?array $data = null): HttpClient
+    {
+        $this->clientManager->setQuery($data);
+        return $this;
     }
 
     /**
@@ -115,7 +87,7 @@ class HttpClient
      */
     public function setTimeout(float $timeout): HttpClient
     {
-        $this->clientSetting['timeout'] = $timeout;
+        $this->clientManager->getRequest()->setTimeout($timeout);
         return $this;
     }
 
@@ -126,7 +98,7 @@ class HttpClient
      */
     public function setConnectTimeout(float $connectTimeout): HttpClient
     {
-        $this->clientSetting['connect_timeout'] = $connectTimeout;
+        $this->clientManager->getRequest()->setConnectTimeout($connectTimeout);
         return $this;
     }
 
@@ -137,7 +109,7 @@ class HttpClient
      */
     public function setKeepAlive(bool $keepAlive = true)
     {
-        $this->clientSetting['keep_alive'] = $keepAlive;
+        $this->clientManager->getRequest()->setKeepAlive($keepAlive);
         return $this;
     }
 
@@ -150,8 +122,7 @@ class HttpClient
      */
     public function setSslVerifyPeer(bool $sslVerifyPeer = true, $sslAllowSelfSigned = false)
     {
-        $this->clientSetting['ssl_verify_peer'] = $sslVerifyPeer;
-        $this->clientSetting['ssl_allow_self_signed'] = $sslAllowSelfSigned;
+        $this->clientManager->getRequest()->setSslVerifyPeer($sslVerifyPeer, $sslAllowSelfSigned);
         return $this;
     }
 
@@ -163,7 +134,7 @@ class HttpClient
      */
     public function setSslHostName(string $sslHostName)
     {
-        $this->clientSetting['ssl_host_name'] = $sslHostName;
+        $this->clientManager->getRequest()->setSslHostName($sslHostName);
         return $this;
     }
 
@@ -174,7 +145,7 @@ class HttpClient
      */
     public function setSslCafile(string $sslCafile)
     {
-        $this->clientSetting['ssl_cafile'] = $sslCafile;
+        $this->clientManager->getRequest()->setSslCafile($sslCafile);
         return $this;
     }
 
@@ -185,7 +156,7 @@ class HttpClient
      */
     public function setSslCapath(string $sslCapath)
     {
-        $this->clientSetting['ssl_capath'] = $sslCapath;
+        $this->clientManager->getRequest()->setSslCapath($sslCapath);
         return $this;
     }
 
@@ -196,7 +167,7 @@ class HttpClient
      */
     public function setSslCertFile(string $sslCertFile)
     {
-        $this->clientSetting['ssl_cert_file'] = $sslCertFile;
+        $this->clientManager->getRequest()->setSslCertFile($sslCertFile);
         return $this;
     }
 
@@ -207,7 +178,7 @@ class HttpClient
      */
     public function setSslKeyFile(string $sslKeyFile)
     {
-        $this->clientSetting['ssl_key_file'] = $sslKeyFile;
+        $this->clientManager->getRequest()->setSslKeyFile($sslKeyFile);
         return $this;
     }
 
@@ -221,17 +192,7 @@ class HttpClient
      */
     public function setProxyHttp(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
     {
-        $this->clientSetting['http_proxy_host'] = $proxyHost;
-        $this->clientSetting['http_proxy_port'] = $proxyPort;
-
-        if (!empty($proxyUser)) {
-            $this->clientSetting['http_proxy_user'] = $proxyUser;
-        }
-
-        if (!empty($proxyPass)) {
-            $this->clientSetting['http_proxy_password'] = $proxyPass;
-        }
-
+        $this->clientManager->getRequest()->setProxyHttp($proxyHost, $proxyPort, $proxyUser, $proxyPass);
         return $this;
     }
 
@@ -245,17 +206,7 @@ class HttpClient
      */
     public function setProxySocks5(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
     {
-        $this->clientSetting['socks5_host'] = $proxyHost;
-        $this->clientSetting['socks5_port'] = $proxyPort;
-
-        if (!empty($proxyUser)) {
-            $this->clientSetting['socks5_username'] = $proxyUser;
-        }
-
-        if (!empty($proxyPass)) {
-            $this->clientSetting['socks5_password'] = $proxyPass;
-        }
-
+        $this->clientManager->getRequest()->setProxySocks5($proxyHost, $proxyPort, $proxyUser, $proxyPass);
         return $this;
     }
 
@@ -269,8 +220,7 @@ class HttpClient
      */
     public function setSocketBind(string $bindAddress, int $bindPort)
     {
-        $this->clientSetting['bind_address'] = $bindAddress;
-        $this->clientSetting['bind_port'] = $bindPort;
+        $this->clientManager->getRequest()->setSocketBind($bindAddress, $bindPort);
         return $this;
     }
 
@@ -282,7 +232,7 @@ class HttpClient
      */
     public function setClientSetting(string $key, $setting): HttpClient
     {
-        $this->clientSetting[$key] = $setting;
+        $this->clientManager->getRequest()->setClientSetting($key, $setting);
         return $this;
     }
 
@@ -294,43 +244,24 @@ class HttpClient
      */
     public function setClientSettings(array $settings, $isMerge = true): HttpClient
     {
-        if ($isMerge) {  // 合并配置项到当前配置中
-            foreach ($settings as $name => $value) {
-                $this->clientSetting[$name] = $value;
-            }
-        } else {
-            $this->clientSetting = $settings;
-        }
+        $this->clientManager->getRequest()->setClientSettings($settings, $isMerge);
         return $this;
     }
 
     public function setBasicAuth(string $userName, string $password): HttpClient
     {
-        $basicAuthToken = base64_encode("{$userName}:{$password}");
-        $this->setHeader('Authorization', "Basic {$basicAuthToken}", false);
+        $this->clientManager->getRequest()->setBasicAuth($userName, $password);
         return $this;
     }
 
-    public function getClient(): Client
+    public function getClient()
     {
-        if ($this->clientManager instanceof ClientManager) {
-            $url = $this->parserUrlInfo();
-            $this->clientManager->getClient()->host = $url->getHost();
-            $this->clientManager->getClient()->port = $url->getPort();
-            $this->clientManager->getClient()->ssl = $url->getIsSsl();
-            $this->clientManager->getClient()->set($this->clientSetting);
-            return $this->clientManager->getClient();
-        }
-        $url = $this->parserUrlInfo();
-        $this->clientManager = new \EasySwoole\HttpClient\Handler\Swoole\Client();
-        $this->clientManager->createClient($url->getHost(), $url->getPort(), $url->getIsSsl());
-        $this->clientManager->getClient()->set($this->clientSetting);
-        return $this->getClient();
+        return $this->clientManager->getClient();
     }
 
-    public function setMethod(string $method):HttpClient
+    public function setMethod(string $method): HttpClient
     {
-        $this->getClient()->setMethod($method);
+        $this->clientManager->getRequest()->setMethod($method);
         return $this;
     }
 
@@ -396,19 +327,6 @@ class HttpClient
     }
 
     /**
-     * 生成一个响应结构体
-     * @param Client $client
-     * @return Response
-     */
-    private function createHttpResponse(Client $client): Response
-    {
-        $response = new Response((array)$client);
-        $response->setClient($client);
-        return $response;
-    }
-
-
-    /**
      * 进行一次RAW请求
      * 此模式下直接发送Raw数据需要手动组装
      * 请注意此方法会忽略设置的POST数据而使用参数传入的RAW数据
@@ -420,57 +338,7 @@ class HttpClient
      */
     protected function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
-        $client = $this->getClient();
-        //预处理。合并cookie 和header
-        $this->setMethod($httpMethod);
-        $client->setCookies((array)$this->cookies + (array)$client->cookies);
-        if($httpMethod == self::METHOD_POST){
-            if(is_array($rawData)){
-                foreach ($rawData as $key => $item){
-                    if($item instanceof \CURLFile){
-                        $client->addFile($item->getFilename(),$key,$item->getMimeType(),$item->getPostFilename());
-                        unset($rawData[$key]);
-                    }
-                }
-                $client->setData($rawData);
-            }else if($rawData !== null){
-                $client->setData($rawData);
-            }
-        }else if($rawData !== null){
-            $client->setData($rawData);
-        }
-        if(is_string($rawData)){
-            $this->setHeader('Content-Length', strlen($rawData));
-        }
-        if (!empty($contentType)) {
-            $this->setContentType($contentType);
-        }
-        $client->setHeaders($this->header);
-        $client->execute($this->url->getFullPath());
-        // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->clientSetting['keep_alive']) || $this->clientSetting['keep_alive'] !== true) {
-            $client->close();
-        }
-        // 处理重定向
-        if (($client->statusCode == 301 || $client->statusCode == 302) && (($this->followLocation > 0) && ($this->redirected < $this->followLocation))) {
-            $this->redirected++;
-            $location = $client->headers['location'];
-            $info = parse_url($location);
-            // scheme 为空 没有域名
-            if (empty($info['scheme']) && empty($info['host'])) {
-                $this->url->setPath($location);
-                $this->parserUrlInfo();
-            } else {
-                // 去除//开头的跳转域名
-                $location = ltrim($location,'//');
-                $this->setUrl($location);
-                $this->httpClient = null;
-            }
-            return $this->rawRequest($httpMethod, $rawData, $contentType);
-        }else{
-            $this->redirected = 0;
-        }
-        return $this->createHttpResponse($client);
+        return $this->clientManager->rawRequest($httpMethod, $rawData, $contentType);
     }
 
     /**
@@ -611,28 +479,7 @@ class HttpClient
      */
     public function download(string $filename, int $offset = 0, $httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null)
     {
-        $client = $this->getClient();
-        $client->setMethod($httpMethod);
-
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
-        if (is_array($rawData)) {
-            $rawData = http_build_query($rawData);
-            $this->setContentTypeFormUrlencoded();
-        }
-
-        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
-        if (!empty($rawData)) {
-            $client->setData($rawData);
-            $this->setHeader('Content-Length', strlen($rawData));
-        }
-
-        // 设置ContentType(如果未设置默认为空的)
-        if (!empty($contentType)) {
-            $this->setContentType($contentType);
-        }
-
-        $response = $client->download($this->url->getFullPath(), $filename, $offset);
-        return $response ? $this->createHttpResponse($client) : false;
+        return $this->clientManager->download($filename, $offset, $httpMethod, $rawData, $contentType);
     }
 
 
@@ -645,18 +492,7 @@ class HttpClient
      */
     public function setHeaders(array $header, $isMerge = true, $strtolower = true): HttpClient
     {
-        if (empty($header)) {
-            return $this;
-        }
-
-        // 非合并模式先清空当前的Header再设置
-        if (!$isMerge) {
-            $this->header = [];
-        }
-
-        foreach ($header as $name => $value) {
-            $this->setHeader($name, $value, $strtolower);
-        }
+        $this->clientManager->getRequest()->setHeaders($header, $isMerge, $strtolower);
         return $this;
     }
 
@@ -670,11 +506,7 @@ class HttpClient
      */
     public function setHeader(string $key, string $value, $strtolower = true): HttpClient
     {
-        if($strtolower){
-            $this->header[strtolower($key)] = strtolower($value);
-        }else{
-            $this->header[$key] = $value;
-        }
+        $this->clientManager->getRequest()->setHeader($key, $value, $strtolower);
         return $this;
     }
 
@@ -687,13 +519,7 @@ class HttpClient
      */
     public function addCookies(array $cookies, $isMerge = true): HttpClient
     {
-        if ($isMerge) {  // 合并配置项到当前配置中
-            foreach ($cookies as $name => $value) {
-                $this->cookies[$name] = $value;
-            }
-        } else {
-            $this->cookies = $cookies;
-        }
+        $this->clientManager->getRequest()->addCookies($cookies, $isMerge);
         return $this;
     }
 
@@ -705,9 +531,10 @@ class HttpClient
      */
     public function addCookie(string $key, string $value): HttpClient
     {
-        $this->cookies[$key] = $value;
+        $this->clientManager->getRequest()->addCookie($key, $value);
         return $this;
     }
+
     /**
      * 升级为Websocket请求
      * @param bool $mask
@@ -716,9 +543,7 @@ class HttpClient
      */
     public function upgrade(bool $mask = true): bool
     {
-        $this->clientSetting['websocket_mask'] = $mask;
-        $client = $this->getClient();
-        return $client->upgrade($this->url->getFullPath());
+        return $this->clientManager->upgrade($mask);
     }
 
     /**
@@ -728,9 +553,9 @@ class HttpClient
      * @param bool $finish
      * @return bool
      */
-    public function push($data,int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true): bool
+    public function push($data, int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true): bool
     {
-        return $this->getClient()->push($data, $opcode, $finish);
+        return $this->clientManager->push($data, $opcode, $finish);
     }
 
     /**
@@ -741,13 +566,13 @@ class HttpClient
      */
     public function recv(float $timeout = 1.0)
     {
-        return $this->getClient()->recv($timeout);
+        return $this->clientManager->recv($timeout);
     }
 
     function __destruct()
     {
-        if($this->clientManager->getClient() instanceof Client){
-            if($this->clientManager->getClient()){
+        if ($this->clientManager->getClient() instanceof Client) {
+            if ($this->clientManager->getClient()) {
                 $this->clientManager->getClient()->close();
             }
             $this->httpClient = null;

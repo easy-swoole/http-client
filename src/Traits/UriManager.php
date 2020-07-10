@@ -13,6 +13,13 @@ trait UriManager
     /** @var Url */
     protected $url;
 
+
+    /**
+     * 强制开启SSL请求
+     * @var bool
+     */
+    protected $enableSSL = false;
+
     /**
      * 设置当前要请求的URL
      * @param string $url 需要请求的网址
@@ -97,5 +104,16 @@ trait UriManager
         $query = empty($query) ? '' : '?' . $query;
         $this->url->setFullPath($path . $query);
         return $this->url;
+    }
+
+
+
+    /**
+     * 强制开启SSL
+     * @param bool $enableSSL
+     */
+    public function setEnableSSL(bool $enableSSL = true)
+    {
+        $this->enableSSL = $enableSSL;
     }
 }

@@ -8,6 +8,12 @@ namespace EasySwoole\HttpClient\Contract;
 interface ClientManager
 {
     /**
+     * ClientManager constructor.
+     * @param string|null $url
+     */
+    public function __construct(?string $url = null);
+
+    /**
      * 创建连接
      * @param string $host
      * @param int $port
@@ -27,4 +33,9 @@ interface ClientManager
      * @return mixed
      */
     public function closeClient();
+
+    /**
+     * @return RequestManager
+     */
+    public function getRequest(): RequestManager;
 }
