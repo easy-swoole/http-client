@@ -17,7 +17,8 @@ class ResponseTest extends TestCase
 
     public function testJson()
     {
-        $client = new HttpClient($this->url . '/json/');
+        $client = new HttpClient($this->url);
+        $client->setQuery(['action' => 'json']);
         $response = $client->get();
         $array = ['title' => 'easyswoole', 'desc' => 'swoole framework'];
 
@@ -30,7 +31,8 @@ class ResponseTest extends TestCase
 
     public function testJsonp()
     {
-        $client = new HttpClient($this->url . '/jsonp/');
+        $client = new HttpClient($this->url);
+        $client->setQuery(['action' => 'jsonp']);
         $response = $client->get();
         $array = ['title' => 'easyswoole', 'desc' => 'swoole framework'];
 
@@ -45,7 +47,8 @@ class ResponseTest extends TestCase
 
     public function testXml()
     {
-        $client = new HttpClient($this->url . '/xml/');
+        $client = new HttpClient($this->url);
+        $client->setQuery(['action' => 'xml']);
         $response = $client->get();
         $array = ['title' => 'easyswoole', 'desc' => 'swoole framework'];
         $xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
