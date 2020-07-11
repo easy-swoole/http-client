@@ -25,15 +25,14 @@ class Client extends AbstractClient
 
     public function getClient(): SwooleHttpClient
     {
+        $url = $this->parserUrlInfo();
         if ($this->client instanceof SwooleHttpClient) {
-            $url = $this->parserUrlInfo();
             $this->client->host = $url->getHost();
             $this->client->port = $url->getPort();
             $this->client->ssl = $url->getIsSsl();
-            $this->client->set($this->request->getClientSetting());
+            $this->client->set($this->getRequest()->getClientSetting());
             return $this->client;
         }
-        $url = $this->parserUrlInfo();
         $this->createClient($url->getHost(), $url->getPort(), $url->getIsSsl());;
         $this->client->set($this->getRequest()->getClientSetting());
         return $this->getClient();
@@ -69,22 +68,23 @@ class Client extends AbstractClient
 
         $client = $this->getClient();
         $client->setMethod($httpMethod);
+        $request = $this->getRequest();
 
         // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
         if (is_array($rawData)) {
             $rawData = http_build_query($rawData);
-            $this->request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+            $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
         }
 
         // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
         if (!empty($rawData)) {
             $client->setData($rawData);
-            $this->request->setHeader('Content-Length', strlen($rawData));
+            $request->setHeader('Content-Length', strlen($rawData));
         }
 
         // 设置ContentType(如果未设置默认为空的)
         if (!empty($contentType)) {
-            $this->request->setContentType($contentType);
+            $request->setContentType($contentType);
         }
 
         $response = $client->download($this->url->getFullPath(), $filename, $offset);
@@ -102,10 +102,11 @@ class Client extends AbstractClient
     public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
         $client = $this->getClient();
+        $request = $this->getRequest();
         //预处理。合并cookie 和header
-        $this->request->setMethod($httpMethod);
+        $request->setMethod($httpMethod);
         $client->setMethod($httpMethod);
-        $client->setCookies((array)$this->request->getCookies() + (array)$client->cookies);
+        $client->setCookies((array)$request->getCookies() + (array)$client->cookies);
         if ($httpMethod == HttpClient::METHOD_POST) {
             if (is_array($rawData)) {
                 foreach ($rawData as $key => $item) {
@@ -122,22 +123,22 @@ class Client extends AbstractClient
             $client->setData($rawData);
         }
         if (is_string($rawData)) {
-            $this->request->setHeader('Content-Length', strlen($rawData));
+            $request->setHeader('Content-Length', strlen($rawData));
         }
         if (!empty($contentType)) {
-            $this->request->setContentType($contentType);
+            $request->setContentType($contentType);
         }
-        $client->setHeaders($this->request->getHeader());
+        $client->setHeaders($request->getHeader());
         $client->execute($this->url->getFullPath());
         // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->request->getClientSetting()['keep_alive']) || $this->request->getClientSetting()['keep_alive'] !== true) {
+        if (!isset($request->getClientSetting()['keep_alive']) || $request->getClientSetting()['keep_alive'] !== true) {
             $client->close();
         }
         // 处理重定向
-        $redirected = $this->request->getRedirected();
-        $followLocation = $this->request->getFollowLocation();
+        $redirected = $request->getRedirected();
+        $followLocation = $request->getFollowLocation();
         if (($client->statusCode == 301 || $client->statusCode == 302) && (($followLocation > 0) && ($redirected < $followLocation))) {
-            $this->request->setRedirected(++$redirected);
+            $request->setRedirected(++$redirected);
             $location = $client->headers['location'];
             $info = parse_url($location);
             // scheme 为空 没有域名
@@ -152,7 +153,7 @@ class Client extends AbstractClient
             }
             return $this->rawRequest($httpMethod, $rawData, $contentType);
         } else {
-            $this->request->setRedirected(0);
+            $request->setRedirected(0);
         }
         return $this->createHttpResponse($client);
     }
