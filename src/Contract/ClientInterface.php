@@ -5,16 +5,21 @@
 
 namespace EasySwoole\HttpClient\Contract;
 
-interface ClientManager
+use EasySwoole\HttpClient\Handler\AbstractRequest;
+
+/**
+ * Interface ClientInterface
+ */
+interface ClientInterface
 {
     /**
-     * ClientManager constructor.
+     * ClientInterface constructor.
      * @param string|null $url
      */
     public function __construct(?string $url = null);
 
     /**
-     * 创建连接
+     * create client
      * @param string $host
      * @param int $port
      * @param bool $ssl
@@ -23,19 +28,19 @@ interface ClientManager
     public function createClient(string $host, int $port = 80, bool $ssl = false);
 
     /**
-     * 获取连接
+     * get client
      * @return mixed
      */
     public function getClient();
 
     /**
-     * 关闭连接
+     * close client
      * @return mixed
      */
     public function closeClient();
 
     /**
-     * @return RequestManager
+     * @return AbstractRequest
      */
-    public function getRequest(): RequestManager;
+    public function getRequest(): AbstractRequest;
 }

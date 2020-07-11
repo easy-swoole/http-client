@@ -7,22 +7,22 @@
 namespace EasySwoole\HttpClient\Handler;
 
 
-use EasySwoole\HttpClient\Contract\ClientManager;
-use EasySwoole\HttpClient\Contract\RequestManager;
+use EasySwoole\HttpClient\Contract\ClientInterface;
+use EasySwoole\HttpClient\Handler\Swoole\Request;
 use EasySwoole\HttpClient\Traits\UriManager;
 
-abstract class AbstractClient implements ClientManager
+abstract class AbstractClient implements ClientInterface
 {
 
     use UriManager;
 
     /**
-     * @var ClientManager
+     * @var ClientInterface
      */
     protected $client;
 
     /**
-     * @var RequestManager
+     * @var AbstractRequest
      */
     protected $request;
 
@@ -34,7 +34,13 @@ abstract class AbstractClient implements ClientManager
         }
     }
 
-    abstract public function getRequest(): AbstractRequest;
+    public function getRequest(): AbstractRequest
+    {
+        if (!$this->request instanceof AbstractRequest) {
+            $this->request = new Request();
+        }
+        return $this->request;
+    }
 
 
     public function setQuery(?array $data)

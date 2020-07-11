@@ -3,14 +3,11 @@
  * @author gaobinzhan <gaobinzhan@gmail.com>
  */
 
-
 namespace EasySwoole\HttpClient\Handler;
 
-
-use EasySwoole\HttpClient\Contract\RequestManager;
 use EasySwoole\HttpClient\HttpClient;
 
-abstract class AbstractRequest implements RequestManager
+abstract class AbstractRequest
 {
 
     /**
@@ -32,7 +29,15 @@ abstract class AbstractRequest implements RequestManager
     ];
 
     protected $followLocation = 3;
+
     protected $redirected = 0;
+
+    /**
+     * 请求方法
+     * @var string
+     */
+    protected $method = HttpClient::METHOD_GET;
+
 
     /**
      * @return int
@@ -44,10 +49,12 @@ abstract class AbstractRequest implements RequestManager
 
     /**
      * @param int $followLocation
+     * @return int
      */
-    public function setFollowLocation(int $followLocation): void
+    public function setFollowLocation(int $followLocation): int
     {
         $this->followLocation = $followLocation;
+        return $this->followLocation;
     }
 
     /**
@@ -81,12 +88,6 @@ abstract class AbstractRequest implements RequestManager
     {
         return $this->method;
     }
-
-    /**
-     * 请求方法
-     * @var string
-     */
-    protected $method = HttpClient::METHOD_GET;
 
     /**
      * @return array

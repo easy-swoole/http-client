@@ -19,37 +19,39 @@ $server->on('request', function (\Swoole\Http\Request $request, \Swoole\Http\Res
         } else {
             $response->end('error');
         }
+    } else {
+        $action = $request->get['action'] ?? 'json';
+        switch ($action) {
+            case 'json':
+                $array = [
+                    'title' => 'easyswoole',
+                    'desc' => 'swoole framework'
+                ];
+                $response->end(json_encode($array));
+                break;
+            case 'jsonp':
+                $array = [
+                    'title' => 'easyswoole',
+                    'desc' => 'swoole framework'
+                ];
+                $json = json_encode($array);
+                $response->end("callback({$json})");
+                break;
+            case 'xml':
+                $xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
+                $xml .= "<test>\n";
+                $xml .= "<title>easyswoole</title>\n";
+                $xml .= "<desc>swoole framework</desc>\n";
+                $xml .= "</test>\n";
+                $response->header('Content-Type', 'text/xml');
+                $response->end($xml);
+                break;
+            default:
+                $response->end('easyswoole');
+        }
     }
 
-    $action = $request->get['action'] ?? 'json';
-    switch ($action) {
-        case 'json':
-            $array = [
-                'title' => 'easyswoole',
-                'desc' => 'swoole framework'
-            ];
-            $response->end(json_encode($array));
-            break;
-        case 'jsonp':
-            $array = [
-                'title' => 'easyswoole',
-                'desc' => 'swoole framework'
-            ];
-            $json = json_encode($array);
-            $response->end("callback({$json})");
-            break;
-        case 'xml':
-            $xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
-            $xml .= "<test>\n";
-            $xml .= "<title>easyswoole</title>\n";
-            $xml .= "<desc>swoole framework</desc>\n";
-            $xml .= "</test>\n";
-            $response->header('Content-Type', 'text/xml');
-            $response->end($xml);
-            break;
-        default:
-            $response->end('easyswoole');
-    }
+
 });
 
 $server->on('message', function ($server, $frame) {

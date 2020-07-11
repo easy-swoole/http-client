@@ -2,9 +2,11 @@
 
 namespace EasySwoole\HttpClient\Test;
 
+use EasySwoole\HttpClient\Exception\InvalidUrl;
 use EasySwoole\HttpClient\HttpClient;
 use PHPUnit\Framework\TestCase;
 use Swoole\WebSocket\Frame;
+
 class Test extends TestCase
 {
     /*
@@ -15,12 +17,12 @@ class Test extends TestCase
     function testGet()
     {
         $client = new HttpClient($this->url);
-        $client->setQuery(['arg2'=>3,'q'=>2]);
+        $client->setQuery(['arg2' => 3, 'q' => 2]);
         $response = $client->get();
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("GET", $json['REQUEST_METHOD']);
         $this->assertEquals([], $json['POST']);
-        $this->assertEquals(['arg1' => 1, 'arg2' => 3,'q'=>2], $json['GET']);
+        $this->assertEquals(['arg1' => 1, 'arg2' => 3, 'q' => 2], $json['GET']);
     }
 
     function testHead()
@@ -129,7 +131,7 @@ class Test extends TestCase
         $client = new HttpClient($this->url);
         $response = $client->post([
             'post1' => 'post1',
-            'file'  => new \CURLFile(__FILE__)
+            'file' => new \CURLFile(__FILE__)
         ]);
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
@@ -201,12 +203,12 @@ class Test extends TestCase
         $upgradeResult = $client->upgrade('cookie1', 'cook');
         $this->assertIsBool(true, $upgradeResult);
         $frame = new Frame();
-        $frame->data = json_encode(['action' => 'hello','content'=>['a'=>1]]);
+        $frame->data = json_encode(['action' => 'hello', 'content' => ['a' => 1]]);
         $pushResult = $client->push($frame);
         $this->assertIsBool(true, $pushResult);
         $recvFrame = $client->recv();
         $this->assertIsBool(true, !!$recvFrame);
-        $this->assertEquals('call hello with arg:{"a":1}',$recvFrame->data);
+        $this->assertEquals('call hello with arg:{"a":1}', $recvFrame->data);
     }
 
     function testBasicAuth()
@@ -215,6 +217,20 @@ class Test extends TestCase
         $httpClient->setBasicAuth('admin', '111111');
         $res = $httpClient->post();
         $res = $res->getBody();
-        $this->assertEquals('success',$res);
+        $this->assertEquals('success', $res);
+    }
+
+    function testFollowLocation()
+    {
+        $httpClient = new HttpClient('https://www.gaobinzhan.com/blog');
+        $httpClient->enableFollowLocation(0);
+        $response = $httpClient->get();
+        $status = $response->getStatusCode();
+        $this->assertEquals(301, $status);
+
+        $httpClient = new HttpClient('https://www.gaobinzhan.com/blog');
+        $response = $httpClient->get();
+        $status = $response->getStatusCode();
+        $this->assertEquals(200, $status);
     }
 }
