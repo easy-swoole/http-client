@@ -570,11 +570,9 @@ class HttpClient
 
     function __destruct()
     {
-        if ($this->clientHandler->getClient() instanceof Client) {
-            if ($this->clientHandler->getClient()) {
-                $this->clientHandler->getClient()->close();
-            }
-            $this->httpClient = null;
+        if ($this->clientHandler instanceof ClientInterface) {
+            $this->clientHandler->closeClient();
+            $this->clientHandler = null;
         }
     }
 }

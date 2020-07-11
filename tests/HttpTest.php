@@ -232,5 +232,10 @@ class Test extends TestCase
         $response = $httpClient->get();
         $status = $response->getStatusCode();
         $this->assertEquals(200, $status);
+
+        $httpClient->enableFollowLocation(0);
+        $response = $httpClient->get();
+        $status = $response->getStatusCode();
+        $this->assertEquals(200, $status);
     }
 }
