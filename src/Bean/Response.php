@@ -218,4 +218,46 @@ class Response extends SplBean
     {
         $this->client = $client;
     }
+
+    /**
+     * 获取json格式的内容
+     * @param bool $assoc true返回数组 false返回对象
+     * @return mixed
+     */
+    public function json($assoc = false)
+    {
+        return json_decode($this->body, $assoc);
+    }
+
+    /**
+     * 获取jsonp格式的内容
+     * @param bool $assoc true返回数组 false返回对象
+     * @return mixed
+     */
+    public function jsonp($assoc = false)
+    {
+        $jsonp = trim($this->body);
+        if (isset($jsonp[0]) && $jsonp[0] !== '[' && $jsonp[0] !== '{') {
+            $begin = strpos($jsonp, '(');
+            $end = strrpos($jsonp, ')');
+            if (false !== $begin && false !== $end) {
+                $jsonp = substr($jsonp, $begin + 1, $end - $begin - 1);
+            }
+        }
+        return json_decode($jsonp, $assoc);
+    }
+
+    /**
+     * 获取xml格式的内容
+     * @param bool $assoc true返回数组 false返回对象
+     * @return array|object
+     */
+    public function xml($assoc = false)
+    {
+        $xml = simplexml_load_string($this->body, null, LIBXML_NOCDATA | LIBXML_COMPACT);
+        if ($assoc) {
+            $xml = (array)$xml;
+        }
+        return $xml;
+    }
 }
