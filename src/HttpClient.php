@@ -11,7 +11,7 @@ namespace EasySwoole\HttpClient;
 use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Contract\ClientInterface;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
-use Swoole\Coroutine\Http\Client;
+use EasySwoole\HttpClient\Traits\UriManager;
 use Swoole\WebSocket\Frame;
 
 class HttpClient
@@ -45,12 +45,27 @@ class HttpClient
      * HttpClient constructor.
      * @param string|null $url
      */
-    public function __construct(string $url = null)
+    public function __construct(?string $url = null)
     {
         $this->clientHandler = new $this->clientHandler($url);
+        $this->setTimeout(3);
+        $this->setConnectTimeout(5);
     }
 
     // --------  客户端配置设置方法  --------
+
+    public function setUrl($url): HttpClient
+    {
+        /** @see UriManager */
+        $this->clientHandler->setUrl($url);
+        return $this;
+    }
+
+    public function setEnableSSL(bool $enableSSL = true)
+    {
+        /** @see UriManager */
+        $this->clientHandler->setEnableSSL($enableSSL);
+    }
 
     /**
      * @return ClientInterface
