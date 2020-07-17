@@ -1,31 +1,32 @@
 <?php
+/**
+ * @author gaobinzhan <gaobinzhan@gmail.com>
+ */
+
 
 namespace EasySwoole\HttpClient\Test;
 
-use EasySwoole\HttpClient\Exception\InvalidUrl;
+
+use EasySwoole\HttpClient\Handler\Curl\Client;
 use EasySwoole\HttpClient\HttpClient;
 use PHPUnit\Framework\TestCase;
-use Swoole\WebSocket\Frame;
 
-class HttpTest extends TestCase
+class CurlTest extends TestCase
 {
-    /*
-     * url内容请看 tests/index.php
-     */
     private $url = 'http://default.web.com/index.php?arg1=1&arg2=2';
 
-    function testGet()
+    public function testGet()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $client->setQuery(['arg2' => 3, 'q' => 2]);
-        $response = $client->get();
-        $json = json_decode($response->getBody(), true);
+        $json = $client->get()->json(true);
         $this->assertEquals("GET", $json['REQUEST_METHOD']);
         $this->assertEquals([], $json['POST']);
         $this->assertEquals(['arg1' => 1, 'arg2' => 3, 'q' => 2], $json['GET']);
 
-
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $client->setQuery(['arg2' => 3, 'q' => 2]);
         $response = $client->get();
@@ -35,29 +36,17 @@ class HttpTest extends TestCase
         $this->assertEquals(['arg1' => 1, 'arg2' => 3, 'q' => 2], $json['GET']);
     }
 
-    function testHead()
+    public function testDelete()
     {
-        $client = new HttpClient($this->url);
-        $response = $client->head();
-        $this->assertEquals('200', $response->getStatusCode());
-        $this->assertEquals('', $response->getBody());
-
         $client = new HttpClient();
-        $client->setUrl($this->url);
-        $response = $client->head();
-        $this->assertEquals('200', $response->getStatusCode());
-        $this->assertEquals('', $response->getBody());
-    }
-
-    function testDelete()
-    {
-        $client = new HttpClient($this->url);
+        $client->setClientHandler(new Client($this->url));
         $response = $client->delete();
         $json = json_decode($response->getBody(), true);
         $this->assertEquals('200', $response->getStatusCode());
         $this->assertEquals("DELETE", $json['REQUEST_METHOD']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->delete();
         $json = json_decode($response->getBody(), true);
@@ -65,10 +54,10 @@ class HttpTest extends TestCase
         $this->assertEquals("DELETE", $json['REQUEST_METHOD']);
     }
 
-
-    function testPut()
+    public function testPut()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->put('testPut');
         $json = json_decode($response->getBody(), true);
         $this->assertEquals('200', $response->getStatusCode());
@@ -76,6 +65,7 @@ class HttpTest extends TestCase
         $this->assertEquals("testPut", $json['RAW']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->put('testPut');
         $json = json_decode($response->getBody(), true);
@@ -84,9 +74,10 @@ class HttpTest extends TestCase
         $this->assertEquals("testPut", $json['RAW']);
     }
 
-    function testPost()
+    public function testPost()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->post([
             'post1' => 'post1'
         ]);
@@ -96,6 +87,7 @@ class HttpTest extends TestCase
         $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->post([
             'post1' => 'post1'
@@ -105,10 +97,12 @@ class HttpTest extends TestCase
         $this->assertEquals(['post1' => 'post1'], $json['POST']);
         $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
     }
+
 
     function testPatch()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->patch('testPath');
         $json = json_decode($response->getBody(), true);
         $this->assertEquals('200', $response->getStatusCode());
@@ -116,6 +110,7 @@ class HttpTest extends TestCase
         $this->assertEquals("testPath", $json['RAW']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->patch('testPath');
         $json = json_decode($response->getBody(), true);
@@ -127,13 +122,15 @@ class HttpTest extends TestCase
 
     function testOptions()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->options(['op' => 'op1'], ['head' => 'headtest']);
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("OPTIONS", $json['REQUEST_METHOD']);
         $this->assertEquals("headtest", $json['HEADER']['Head']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->options(['op' => 'op1'], ['head' => 'headtest']);
         $json = json_decode($response->getBody(), true);
@@ -145,11 +142,13 @@ class HttpTest extends TestCase
     function testPostXml()
     {
         $client = new HttpClient($this->url);
+        $client->setClientHandler(new Client($this->url));
         $response = $client->postXml('<xml></xml>');
         $json = json_decode($response->getBody(), true);
         $this->assertEquals('<xml></xml>', $json['RAW']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->postXml('<xml></xml>');
         $json = json_decode($response->getBody(), true);
@@ -158,7 +157,8 @@ class HttpTest extends TestCase
 
     function testPostJson()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->postJson(json_encode(['json' => 'json1']));
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
@@ -170,6 +170,7 @@ class HttpTest extends TestCase
 
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->postJson(json_encode(['json' => 'json1']));
         $json = json_decode($response->getBody(), true);
@@ -179,27 +180,12 @@ class HttpTest extends TestCase
         $raw = $json["RAW"];
         $raw = json_decode($raw, true);
         $this->assertEquals(['json' => 'json1'], $raw);
-    }
-
-    function testDownload()
-    {
-        $client = new HttpClient('https://www.easyswoole.com/Images/docNavLogo.png');
-        $response = $client->download('./test.png');
-        $this->assertEquals('200', $response->getStatusCode());
-        $this->assertEquals(filesize('./test.png'), $response->getHeaders()['content-length']);
-        @unlink('./test.png');
-
-        $client = new HttpClient();
-        $client->setUrl('https://www.easyswoole.com/Images/docNavLogo.png');
-        $response = $client->download('./test.png');
-        $this->assertEquals('200', $response->getStatusCode());
-        $this->assertEquals(filesize('./test.png'), $response->getHeaders()['content-length']);
-        @unlink('./test.png');
     }
 
     function testPostString()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $response = $client->post('postStr');
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
@@ -207,43 +193,19 @@ class HttpTest extends TestCase
         $this->assertEquals('postStr', $json['RAW']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $response = $client->post('postStr');
         $json = json_decode($response->getBody(), true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
         $this->assertEquals([], $json['POST']);
         $this->assertEquals('postStr', $json['RAW']);
-    }
-
-    function testPostFile()
-    {
-        $client = new HttpClient($this->url);
-        $response = $client->post([
-            'post1' => 'post1',
-            'file' => new \CURLFile(__FILE__)
-        ]);
-        $json = json_decode($response->getBody(), true);
-        $this->assertEquals("POST", $json['REQUEST_METHOD']);
-        $this->assertEquals(['post1' => 'post1'], $json['POST']);
-        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
-        $this->assertEquals('HttpTest.php', $json['FILE']['file']['name']);
-
-        $client = new HttpClient();
-        $client->setUrl($this->url);
-        $response = $client->post([
-            'post1' => 'post1',
-            'file' => new \CURLFile(__FILE__)
-        ]);
-        $json = json_decode($response->getBody(), true);
-        $this->assertEquals("POST", $json['REQUEST_METHOD']);
-        $this->assertEquals(['post1' => 'post1'], $json['POST']);
-        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
-        $this->assertEquals('HttpTest.php', $json['FILE']['file']['name']);
     }
 
     function testSetHeaders()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $client->setHeaders([
             'head1' => 'head1',
             'head2' => 'head2'
@@ -255,6 +217,7 @@ class HttpTest extends TestCase
         $this->assertEquals("head2", $json['HEADER']['Head2']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $client->setHeaders([
             'head1' => 'head1',
@@ -270,7 +233,8 @@ class HttpTest extends TestCase
 
     function testSetHeader()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $client->setHeader('head1', 'head1');
         $response = $client->get();
         $json = json_decode($response->getBody(), true);
@@ -278,6 +242,7 @@ class HttpTest extends TestCase
         $this->assertEquals("head1", $json['HEADER']['Head1']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $client->setHeader('head1', 'head1');
         $response = $client->get();
@@ -288,7 +253,8 @@ class HttpTest extends TestCase
 
     function testAddCookies()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $client->addCookies([
             'cookie1' => 'cookie1',
             'cookie2' => 'cookie2'
@@ -300,6 +266,7 @@ class HttpTest extends TestCase
         $this->assertEquals("cookie2", $json['COOKIE']['cookie2']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $client->addCookies([
             'cookie1' => 'cookie1',
@@ -314,7 +281,8 @@ class HttpTest extends TestCase
 
     function testAddCookie()
     {
-        $client = new HttpClient($this->url);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client($this->url));
         $client->addCookie('cookie1', 'cook');
         $response = $client->get(['head' => 'head']);
         $json = json_decode($response->getBody(), true);
@@ -323,6 +291,7 @@ class HttpTest extends TestCase
         $this->assertEquals("cook", $json['COOKIE']['cookie1']);
 
         $client = new HttpClient();
+        $client->setClientHandler(new Client());
         $client->setUrl($this->url);
         $client->addCookie('cookie1', 'cook');
         $response = $client->get(['head' => 'head']);
@@ -332,92 +301,48 @@ class HttpTest extends TestCase
         $this->assertEquals("cook", $json['COOKIE']['cookie1']);
     }
 
-    /**
-     * 测试websocket，需要自己实现websocket服务器
-     * testWebsocket
-     * @throws \EasySwoole\HttpClient\Exception\InvalidUrl
-     * @author tioncico
-     * Time: 下午12:26
-     */
-    function testWebsocket()
-    {
-        $client = new HttpClient('127.0.0.1:9510');
-        $upgradeResult = $client->upgrade('cookie1', 'cook');
-        $this->assertIsBool(true, $upgradeResult);
-        $frame = new Frame();
-        $frame->data = json_encode(['action' => 'hello', 'content' => ['a' => 1]]);
-        $pushResult = $client->push($frame);
-        $this->assertIsBool(true, $pushResult);
-        $recvFrame = $client->recv();
-        $this->assertIsBool(true, !!$recvFrame);
-        $this->assertEquals('call hello with arg:{"a":1}', $recvFrame->data);
+    public function testSsl(){
+        $client = new HttpClient();
+        $client->setClientHandler(new Client());
+        $client->setKeepAlive(true);
+        $client->setUrl("https://blog.gaobinzhan.com");
+        $client->addCookie('cookie1', 'cook');
+
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
+    }
+
+    public function testProxy(){
+        $client = new HttpClient();
+        $client->setClientHandler(new Client());
+        $client->setTimeout(3);
+        $client->setUrl("http://www.google.com");
+        $client->setProxySocks5('127.0.0.1','1086');
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
 
         $client = new HttpClient();
-        $client->setUrl('127.0.0.1:9510');
-        $upgradeResult = $client->upgrade('cookie1', 'cook');
-        $this->assertIsBool(true, $upgradeResult);
-        $frame = new Frame();
-        $frame->data = json_encode(['action' => 'hello', 'content' => ['a' => 1]]);
-        $pushResult = $client->push($frame);
-        $this->assertIsBool(true, $pushResult);
-        $recvFrame = $client->recv();
-        $this->assertIsBool(true, !!$recvFrame);
-        $this->assertEquals('call hello with arg:{"a":1}', $recvFrame->data);
+        $client->setClientHandler(new Client());
+        $client->setTimeout(3);
+        $client->setUrl("http://www.google.com");
+        $client->setProxyHttp('127.0.0.1','1087');
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
     }
 
-    function testBasicAuth()
-    {
-        $httpClient = new HttpClient('127.0.0.1:9510');
-        $httpClient->setBasicAuth('admin', '111111');
-        $res = $httpClient->post();
-        $res = $res->getBody();
-        $this->assertEquals('success', $res);
+    public function testFollowLocation(){
 
-        $httpClient = new HttpClient();
-        $httpClient->setUrl('127.0.0.1:9510');
-        $httpClient->setBasicAuth('admin', '111111');
-        $res = $httpClient->post();
-        $res = $res->getBody();
-        $this->assertEquals('success', $res);
-    }
+        $client = new HttpClient();
+        $client->setClientHandler(new Client());
+        $client->setUrl("http://blog.gaobinzhan.com");
+        $client->enableFollowLocation(0);
+        $response = $client->get();
+        $this->assertEquals('301', $response->getStatusCode());
 
-    function testFollowLocation()
-    {
-        $httpClient = new HttpClient('https://www.gaobinzhan.com/blog');
-        $httpClient->enableFollowLocation(0);
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(301, $status);
-
-
-        $httpClient = new HttpClient('https://www.gaobinzhan.com/blog');
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(200, $status);
-
-        $httpClient->enableFollowLocation(0);
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(200, $status);
-
-
-        $httpClient = new HttpClient();
-        $httpClient->setUrl('https://www.gaobinzhan.com/blog');
-        $httpClient->enableFollowLocation(0);
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(301, $status);
-
-
-        $httpClient = new HttpClient();
-        $httpClient->setUrl('https://www.gaobinzhan.com/blog');
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(200, $status);
-
-        $httpClient->enableFollowLocation(0);
-        $response = $httpClient->get();
-        $status = $response->getStatusCode();
-        $this->assertEquals(200, $status);
+        $client = new HttpClient();
+        $client->setClientHandler(new Client());
+        $client->setUrl("http://blog.gaobinzhan.com");
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
     }
 }
