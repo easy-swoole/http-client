@@ -43,6 +43,14 @@ trait UriManager
         return $this;
     }
 
+    /**
+     * @return Url
+     */
+    public function getUrl(): ?Url
+    {
+        return $this->url;
+    }
+
 
     public function setQuery(?array $data = null)
     {
@@ -105,7 +113,6 @@ trait UriManager
         $this->url->setFullPath($path . $query);
         return $this->url;
     }
-
 
 
     /**
