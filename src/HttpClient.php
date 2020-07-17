@@ -9,6 +9,7 @@
 namespace EasySwoole\HttpClient;
 
 use EasySwoole\HttpClient\Bean\Response;
+use EasySwoole\HttpClient\Bean\Url;
 use EasySwoole\HttpClient\Contract\ClientInterface;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
 use EasySwoole\HttpClient\Traits\UriManager;
@@ -38,18 +39,19 @@ class HttpClient
     /**
      * @var ClientInterface
      */
-    protected $clientHandler = \EasySwoole\HttpClient\Handler\Swoole\Client::class;
+    protected $clientHandler;
 
 
     /**
      * HttpClient constructor.
      * @param string|null $url
      */
-    public function __construct(?string $url = null)
+    public function __construct(?string $url = null, ?ClientInterface $clientHandler = null)
     {
-        $this->clientHandler = new $this->clientHandler($url);
-        $this->setTimeout(3);
-        $this->setConnectTimeout(5);
+        if (empty($clientHandler)) {
+            $clientHandler = \EasySwoole\HttpClient\Handler\Swoole\Client::class;
+        }
+        $this->setClientHandler(new $clientHandler($url));
     }
 
     // --------  客户端配置设置方法  --------
@@ -67,6 +69,18 @@ class HttpClient
         $this->clientHandler->setEnableSSL($enableSSL);
     }
 
+    public function getUrl(): ?Url
+    {
+        /** @see UriManager */
+        return $this->clientHandler->getUrl();
+    }
+
+    public function getEnableSSL(): bool
+    {
+        /** @see UriManager */
+        return $this->clientHandler->getEnableSSL();
+    }
+
     /**
      * @return ClientInterface
      */
@@ -81,6 +95,8 @@ class HttpClient
     public function setClientHandler(ClientInterface $clientHandler): void
     {
         $this->clientHandler = $clientHandler;
+        $this->setTimeout(3);
+        $this->setConnectTimeout(5);
     }
 
     public function enableFollowLocation(int $maxRedirect = 5): int

@@ -123,4 +123,9 @@ trait UriManager
     {
         $this->enableSSL = $enableSSL;
     }
+
+    public function getEnableSSL(): bool
+    {
+        return $this->enableSSL;
+    }
 }
