@@ -7,8 +7,10 @@
 namespace EasySwoole\HttpClient\Handler;
 
 
+use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Contract\ClientInterface;
 use EasySwoole\HttpClient\Handler\Swoole\Request;
+use EasySwoole\HttpClient\HttpClient;
 use EasySwoole\HttpClient\Traits\UriManager;
 
 abstract class AbstractClient implements ClientInterface
@@ -51,4 +53,6 @@ abstract class AbstractClient implements ClientInterface
             $this->url->setQuery(http_build_query($data + $old));
         }
     }
+
+    abstract public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response;
 }
