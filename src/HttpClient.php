@@ -45,13 +45,16 @@ class HttpClient
     /**
      * HttpClient constructor.
      * @param string|null $url
+     * @param null $clientHandler
      */
-    public function __construct(?string $url = null, ?ClientInterface $clientHandler = null)
+    public function __construct(?string $url = null, $clientHandler = null)
     {
-        if (empty($clientHandler)) {
-            $clientHandler = \EasySwoole\HttpClient\Handler\Swoole\Client::class;
+        if (is_string($clientHandler) && class_exists($clientHandler)) {
+            $clientHandler = new $clientHandler($url);
+        } else {
+            $clientHandler = new \EasySwoole\HttpClient\Handler\Swoole\Client($url);
         }
-        $this->setClientHandler(new $clientHandler($url));
+        $this->setClientHandler($clientHandler);
     }
 
     // --------  客户端配置设置方法  --------

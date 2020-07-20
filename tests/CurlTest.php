@@ -17,8 +17,7 @@ class CurlTest extends TestCase
 
     public function testGet()
     {
-        $client = new HttpClient();
-        $client->setClientHandler(new Client($this->url));
+        $client = new HttpClient($this->url, Client::class);
         $client->setQuery(['arg2' => 3, 'q' => 2]);
         $json = $client->get()->json(true);
         $this->assertEquals("GET", $json['REQUEST_METHOD']);
@@ -301,7 +300,8 @@ class CurlTest extends TestCase
         $this->assertEquals("cook", $json['COOKIE']['cookie1']);
     }
 
-    public function testSsl(){
+    public function testSsl()
+    {
         $client = new HttpClient();
         $client->setClientHandler(new Client());
         $client->setKeepAlive(true);
@@ -312,12 +312,13 @@ class CurlTest extends TestCase
         $this->assertEquals('200', $response->getStatusCode());
     }
 
-    public function testProxy(){
+    public function testProxy()
+    {
         $client = new HttpClient();
         $client->setClientHandler(new Client());
         $client->setTimeout(3);
         $client->setUrl("http://www.google.com");
-        $client->setProxySocks5('127.0.0.1','1086');
+        $client->setProxySocks5('127.0.0.1', '1086');
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
 
@@ -325,12 +326,13 @@ class CurlTest extends TestCase
         $client->setClientHandler(new Client());
         $client->setTimeout(3);
         $client->setUrl("http://www.google.com");
-        $client->setProxyHttp('127.0.0.1','1087');
+        $client->setProxyHttp('127.0.0.1', '1087');
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
     }
 
-    public function testFollowLocation(){
+    public function testFollowLocation()
+    {
 
         $client = new HttpClient();
         $client->setClientHandler(new Client());
