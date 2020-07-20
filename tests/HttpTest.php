@@ -420,4 +420,21 @@ class HttpTest extends TestCase
         $status = $response->getStatusCode();
         $this->assertEquals(200, $status);
     }
+
+    public function testProxy()
+    {
+        $client = new HttpClient();
+        $client->setTimeout(3);
+        $client->setUrl("http://www.google.com");
+        $client->setProxySocks5('127.0.0.1', '1086');
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
+
+        $client = new HttpClient();
+        $client->setTimeout(3);
+        $client->setUrl("http://www.google.com");
+        $client->setProxyHttp('127.0.0.1', '1087');
+        $response = $client->get();
+        $this->assertEquals('200', $response->getStatusCode());
+    }
 }

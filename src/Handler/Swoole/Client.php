@@ -9,6 +9,7 @@ namespace EasySwoole\HttpClient\Handler\Swoole;
 
 use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Handler\AbstractClient;
+use EasySwoole\HttpClient\Handler\AbstractRequest;
 use EasySwoole\HttpClient\HttpClient;
 use Swoole\Coroutine\Http\Client as SwooleHttpClient;
 
@@ -46,6 +47,11 @@ class Client extends AbstractClient
         return false;
     }
 
+    public function setMethod($method)
+    {
+        $this->getClient()->setMethod($method);
+    }
+
     public function upgrade(bool $mask = true): bool
     {
         $this->getRequest()->setClientSetting('websocket_mask', $mask);
@@ -70,7 +76,7 @@ class Client extends AbstractClient
         $client->setMethod($httpMethod);
         $request = $this->getRequest();
 
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
+        // 如果提供了数组那么认为是x-www-form-urlencoded快捷请求
         if (is_array($rawData)) {
             $rawData = http_build_query($rawData);
             $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
@@ -87,6 +93,8 @@ class Client extends AbstractClient
             $request->setContentType($contentType);
         }
 
+        $client->setHeaders($request->getHeader());
+
         $response = $client->download($this->url->getFullPath(), $filename, $offset);
         return $response ? $this->createHttpResponse($client) : false;
     }
@@ -101,10 +109,11 @@ class Client extends AbstractClient
 
     public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
-        $client = $this->getClient();
         $request = $this->getRequest();
-        //预处理。合并cookie 和header
         $request->setMethod($httpMethod);
+
+        $client = $this->getClient();
+        //预处理。合并cookie 和header
         $client->setMethod($httpMethod);
         $client->setCookies((array)$request->getCookies() + (array)$client->cookies);
         if ($httpMethod == HttpClient::METHOD_POST) {
@@ -156,5 +165,13 @@ class Client extends AbstractClient
             $request->setRedirected(0);
         }
         return $this->createHttpResponse($client);
+    }
+
+    public function getRequest(): AbstractRequest
+    {
+        if (!$this->request instanceof AbstractRequest) {
+            $this->request = new Request();
+        }
+        return $this->request;
     }
 }

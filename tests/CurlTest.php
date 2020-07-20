@@ -305,27 +305,22 @@ class CurlTest extends TestCase
         $client = new HttpClient();
         $client->setClientHandler(new Client());
         $client->setKeepAlive(true);
-        $client->setUrl("https://blog.gaobinzhan.com");
+        $client->setUrl("http://blog.gaobinzhan.com");
         $client->addCookie('cookie1', 'cook');
-
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
     }
 
     public function testProxy()
     {
-        $client = new HttpClient();
-        $client->setClientHandler(new Client());
+        $client = new HttpClient('http://www.google.com',Client::class);
         $client->setTimeout(3);
-        $client->setUrl("http://www.google.com");
         $client->setProxySocks5('127.0.0.1', '1086');
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
 
-        $client = new HttpClient();
-        $client->setClientHandler(new Client());
+        $client = new HttpClient('http://www.google.com',Client::class);
         $client->setTimeout(3);
-        $client->setUrl("http://www.google.com");
         $client->setProxyHttp('127.0.0.1', '1087');
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());

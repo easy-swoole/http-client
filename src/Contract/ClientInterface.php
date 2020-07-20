@@ -43,4 +43,11 @@ interface ClientInterface
      * @return AbstractRequest
      */
     public function getRequest(): AbstractRequest;
+
+    /**
+     * 兼容1.4.x之前的setMethod
+     * @param string $method
+     * @return mixed
+     */
+    public function setMethod(string $method);
 }

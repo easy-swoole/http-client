@@ -18,9 +18,8 @@ class Client extends AbstractClient
     public function createClient(string $host, int $port = 80, bool $ssl = false)
     {
         $this->client = curl_init();
-        curl_setopt($this->client, CURLOPT_URL, $host);
-        curl_setopt($this->client, CURLOPT_PORT, $port);
-        curl_setopt($this->client, CURLOPT_USE_SSL, $ssl);
+        curl_setopt($this->client, CURLOPT_URL, "{$host}:{$port}{$this->url->getFullPath()}");
+
     }
 
     public function closeClient()
@@ -35,18 +34,23 @@ class Client extends AbstractClient
     {
         $url = $this->parserUrlInfo();
         if (gettype($this->client) == 'resource') {
-            curl_setopt($this->client, CURLOPT_URL, $url->getScheme() . '://' . $url->getHost());
-            curl_setopt($this->client, CURLOPT_PORT, $url->getPort());
-            curl_setopt($this->client, CURLOPT_USE_SSL, $url->getIsSsl());
             return $this->client;
         }
         $this->createClient($url->getScheme() . '://' . $url->getHost(), $url->getPort(), $url->getIsSsl());
         return $this->getClient();
     }
 
+    public function setMethod($method)
+    {
+        $client = $this->getClient();
+        curl_setopt($client, CURLOPT_CUSTOMREQUEST, $method);
+    }
+
     public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
         $request = $this->getRequest();
+        $request->setMethod($httpMethod);
+
         $client = $this->getClient();
         curl_setopt($client, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($client, CURLOPT_CUSTOMREQUEST, $httpMethod);
@@ -56,6 +60,7 @@ class Client extends AbstractClient
         if ($rawData !== null) {
             if (is_array($rawData)) {
                 $rawData = http_build_query($rawData);
+                $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
             } elseif (is_string($rawData)) {
                 $request->setContentType('text/plain');
                 $request->setHeader('Content-Length', strlen($rawData));
@@ -87,9 +92,8 @@ class Client extends AbstractClient
         }
         curl_setopt($client, CURLOPT_COOKIE, $cookies);
 
-        /**------------------------设置url并执行请求-----------------------------------------*/
+        /**------------------------设置opt并执行请求-----------------------------------------*/
         curl_setopt_array($client, $request->getClientSetting());
-        curl_setopt($client, CURLOPT_URL, $this->url->getScheme() . '://' . $this->url->getHost() . $this->url->getFullPath());
         $body = curl_exec($client);
 
         /**------------------------构建响应信息-----------------------------------------*/

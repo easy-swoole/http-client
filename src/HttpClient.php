@@ -294,6 +294,7 @@ class HttpClient
 
     public function setMethod(string $method): HttpClient
     {
+        $this->clientHandler->setMethod($method);
         $this->clientHandler->getRequest()->setMethod($method);
         return $this;
     }
