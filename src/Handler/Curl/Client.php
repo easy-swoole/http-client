@@ -136,8 +136,7 @@ class Client extends AbstractClient
         /**----------------------------------构建请求数据-----------------------------------------*/
         if ($rawData !== null) {
             if (is_array($rawData)) {
-                $rawData = http_build_query($rawData);
-                $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+                $request->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
             } elseif (is_string($rawData)) {
                 $request->setContentType('text/plain');
                 $request->setHeader('Content-Length', strlen($rawData));

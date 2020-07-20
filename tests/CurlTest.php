@@ -80,7 +80,7 @@ class CurlTest extends TestCase
         $response = $client->post([
             'post1' => 'post1'
         ]);
-        $json = json_decode($response->getBody(), true);
+        $json = $response->json(true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
         $this->assertEquals(['post1' => 'post1'], $json['POST']);
         $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
@@ -91,7 +91,7 @@ class CurlTest extends TestCase
         $response = $client->post([
             'post1' => 'post1'
         ]);
-        $json = json_decode($response->getBody(), true);
+        $json = $response->json(true);
         $this->assertEquals("POST", $json['REQUEST_METHOD']);
         $this->assertEquals(['post1' => 'post1'], $json['POST']);
         $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
@@ -348,12 +348,39 @@ class CurlTest extends TestCase
         $this->assertEquals('200', $response->getStatusCode());
         $this->assertEquals(filesize('./test.png'), curl_getinfo($response->getClient())['download_content_length']);
         @unlink('./test.png');
-//
+
         $client = new HttpClient();
         $client->setClientHandler(new Client('https://www.easyswoole.com/Images/docNavLogo.png'));
         $response = $client->download('./test.png');
         $this->assertEquals('200', $response->getStatusCode());
         $this->assertEquals(filesize('./test.png'), curl_getinfo($response->getClient())['download_content_length']);
         @unlink('./test.png');
+    }
+
+    public function testPostFile()
+    {
+        $client = new HttpClient($this->url,Client::class);
+        $response = $client->post([
+            'post1' => 'post1',
+            'file' => new \CURLFile(__FILE__)
+        ]);
+        $json = json_decode($response->getBody(), true);
+        $this->assertEquals("POST", $json['REQUEST_METHOD']);
+        $this->assertEquals(['post1' => 'post1'], $json['POST']);
+        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
+        $this->assertEquals('CurlTest.php', $json['FILE']['file']['name']);
+
+        $client = new HttpClient();
+        $client->setClientHandler(new Client());
+        $client->setUrl($this->url);
+        $response = $client->post([
+            'post1' => 'post1',
+            'file' => new \CURLFile(__FILE__)
+        ]);
+        $json = json_decode($response->getBody(), true);
+        $this->assertEquals("POST", $json['REQUEST_METHOD']);
+        $this->assertEquals(['post1' => 'post1'], $json['POST']);
+        $this->assertEquals(['arg1' => 1, 'arg2' => 2], $json['GET']);
+        $this->assertEquals('CurlTest.php', $json['FILE']['file']['name']);
     }
 }
