@@ -44,32 +44,31 @@ class Request extends AbstractRequest
     public function setSslVerifyPeer(bool $sslVerifyPeer = true, $sslAllowSelfSigned = false)
     {
         $this->clientSetting[CURLOPT_SSL_VERIFYPEER] = $sslVerifyPeer;
-        $this->clientSetting['ssl_allow_self_signed'] = $sslAllowSelfSigned;
     }
 
     public function setSslHostName(string $sslHostName)
     {
-        $this->clientSetting['ssl_host_name'] = $sslHostName;
+        // 未支持
     }
 
     public function setSslCafile(string $sslCafile)
     {
-        $this->clientSetting['ssl_cafile'] = $sslCafile;
+        // 未支持
     }
 
     public function setSslCapath(string $sslCapath)
     {
-        $this->clientSetting['ssl_capath'] = $sslCapath;
+        // 未支持
     }
 
     public function setSslCertFile(string $sslCertFile)
     {
-        $this->clientSetting['ssl_cert_file'] = $sslCertFile;
+        $this->clientSetting[CURLOPT_SSLCERT] = $sslCertFile;
     }
 
     public function setSslKeyFile(string $sslKeyFile)
     {
-        $this->clientSetting['ssl_key_file'] = $sslKeyFile;
+        $this->clientSetting[CURLOPT_SSLKEY] = $sslKeyFile;
     }
 
     public function setProxyHttp(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
@@ -88,8 +87,7 @@ class Request extends AbstractRequest
 
     public function setSocketBind(string $bindAddress, int $bindPort)
     {
-        $this->clientSetting['bind_address'] = $bindAddress;
-        $this->clientSetting['bind_port'] = $bindPort;
+        // 未支持
     }
 
     public function setClientSetting(string $key, $setting)

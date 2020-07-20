@@ -300,17 +300,6 @@ class CurlTest extends TestCase
         $this->assertEquals("cook", $json['COOKIE']['cookie1']);
     }
 
-    public function testSsl()
-    {
-        $client = new HttpClient();
-        $client->setClientHandler(new Client());
-        $client->setKeepAlive(true);
-        $client->setUrl("http://blog.gaobinzhan.com");
-        $client->addCookie('cookie1', 'cook');
-        $response = $client->get();
-        $this->assertEquals('200', $response->getStatusCode());
-    }
-
     public function testProxy()
     {
         $client = new HttpClient('http://www.google.com',Client::class);
@@ -341,5 +330,30 @@ class CurlTest extends TestCase
         $client->setUrl("http://blog.gaobinzhan.com");
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
+    }
+
+    public function testSsl(){
+        $client = new HttpClient('https://test.ssl.com',Client::class);
+        $client->setSslVerifyPeer(false);
+        $client->setSslCertFile('/Users/gaobinzhan/Documents/testSsl/client.crt');
+        $client->setSslKeyFile('/Users/gaobinzhan/Documents/testSsl/client.key');
+        $response = $client->get();
+        $this->assertEquals(200,$response->getStatusCode());
+    }
+
+    function testDownload()
+    {
+        $client = new HttpClient('https://www.easyswoole.com/Images/docNavLogo.png',Client::class);
+        $response = $client->download('./test.png',0,'POST');
+        $this->assertEquals('200', $response->getStatusCode());
+        $this->assertEquals(filesize('./test.png'), curl_getinfo($response->getClient())['download_content_length']);
+        @unlink('./test.png');
+//
+        $client = new HttpClient();
+        $client->setClientHandler(new Client('https://www.easyswoole.com/Images/docNavLogo.png'));
+        $response = $client->download('./test.png');
+        $this->assertEquals('200', $response->getStatusCode());
+        $this->assertEquals(filesize('./test.png'), curl_getinfo($response->getClient())['download_content_length']);
+        @unlink('./test.png');
     }
 }

@@ -437,4 +437,13 @@ class HttpTest extends TestCase
         $response = $client->get();
         $this->assertEquals('200', $response->getStatusCode());
     }
+
+    public function testSsl(){
+        $client = new HttpClient();
+        $client->setUrl("https://test.ssl.com");
+        $client->setSslCertFile('/Users/gaobinzhan/Documents/testSsl/client.crt');
+        $client->setSslKeyFile('/Users/gaobinzhan/Documents/testSsl/client.key');
+        $response = $client->get();
+        $this->assertEquals(200,$response->getStatusCode());
+    }
 }
