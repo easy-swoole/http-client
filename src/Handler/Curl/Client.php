@@ -19,6 +19,7 @@ class Client extends AbstractClient
     {
         $this->client = curl_init();
         curl_setopt($this->client, CURLOPT_URL, "{$host}:{$port}{$this->url->getFullPath()}");
+        curl_setopt($this->client, CURLOPT_USE_SSL, $ssl);
 
     }
 
@@ -35,10 +36,15 @@ class Client extends AbstractClient
     public function getClient()
     {
         $url = $this->parserUrlInfo();
+        $host = $url->getScheme() . '://' . $url->getHost();
+        $port = $url->getPort();
+        $ssl = $url->getIsSsl();
         if (gettype($this->client) == 'resource') {
+            curl_setopt($this->client, CURLOPT_URL, "{$host}:{$port}{$this->url->getFullPath()}");
+            curl_setopt($this->client, CURLOPT_USE_SSL, $ssl);
             return $this->client;
         }
-        $this->createClient($url->getScheme() . '://' . $url->getHost(), $url->getPort(), $url->getIsSsl());
+        $this->createClient($host, $port, $ssl);
         return $this->getClient();
     }
 
@@ -65,7 +71,7 @@ class Client extends AbstractClient
                 $rawData = http_build_query($rawData);
                 $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
             } elseif (is_string($rawData)) {
-                $request->setContentType('text/plain');
+                $request->setContentType(HttpClient::CONTENT_TYPE_TEXT_PLAIN);
                 $request->setHeader('Content-Length', strlen($rawData));
             }
             curl_setopt($client, CURLOPT_POSTFIELDS, $rawData);
@@ -137,8 +143,8 @@ class Client extends AbstractClient
         if ($rawData !== null) {
             if (is_array($rawData)) {
                 $isUploadFile = false;
-                foreach ($rawData as $key => $item){
-                    if ($item instanceof \CURLFile){
+                foreach ($rawData as $key => $item) {
+                    if ($item instanceof \CURLFile) {
                         $isUploadFile = true;
                         $request->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
                         break;
