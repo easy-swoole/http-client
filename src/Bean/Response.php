@@ -9,7 +9,6 @@
 namespace EasySwoole\HttpClient\Bean;
 
 use EasySwoole\Spl\SplBean;
-use Swoole\Coroutine\Http\Client;
 
 /**
  * 标准响应体

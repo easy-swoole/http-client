@@ -8,7 +8,6 @@ namespace EasySwoole\HttpClient\Handler\Swoole;
 
 
 use EasySwoole\HttpClient\Handler\AbstractRequest;
-use EasySwoole\HttpClient\HttpClient;
 
 class Request extends AbstractRequest
 {
