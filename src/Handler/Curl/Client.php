@@ -133,13 +133,25 @@ class Client extends AbstractClient
         curl_setopt($client, CURLOPT_CUSTOMREQUEST, $httpMethod);
         curl_setopt($client, CURLOPT_HEADER, true);
 
-        /**----------------------------------构建请求数据-----------------------------------------*/
+        /**----------------------------------构建请求数据及ContentType-----------------------------------------*/
         if ($rawData !== null) {
             if (is_array($rawData)) {
-                $request->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
+                $isUploadFile = false;
+                foreach ($rawData as $key => $item){
+                    if ($item instanceof \CURLFile){
+                        $isUploadFile = true;
+                        $request->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
+                        break;
+                    }
+                }
+
+                if ($isUploadFile == false) {
+                    $rawData = http_build_query($rawData);
+                    $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+                }
             } elseif (is_string($rawData)) {
-                $request->setContentType('text/plain');
                 $request->setHeader('Content-Length', strlen($rawData));
+                $request->setContentType(HttpClient::CONTENT_TYPE_TEXT_PLAIN);
             }
             curl_setopt($client, CURLOPT_POSTFIELDS, $rawData);
         }

@@ -31,6 +31,7 @@ class HttpClient
     // 常用POST提交请求头
     const CONTENT_TYPE_TEXT_XML = 'text/xml';
     const CONTENT_TYPE_TEXT_JSON = 'text/json';
+    const CONTENT_TYPE_TEXT_PLAIN = 'text/plain';
     const CONTENT_TYPE_FORM_DATA = 'multipart/form-data';
     const CONTENT_TYPE_APPLICATION_XML = 'application/xml';
     const CONTENT_TYPE_APPLICATION_JSON = 'application/json';
