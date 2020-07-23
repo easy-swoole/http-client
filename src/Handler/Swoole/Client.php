@@ -7,6 +7,7 @@
 namespace EasySwoole\HttpClient\Handler\Swoole;
 
 
+use EasySwoole\HttpClient\Bean\CURLFile;
 use EasySwoole\HttpClient\Bean\Response;
 use EasySwoole\HttpClient\Handler\AbstractClient;
 use EasySwoole\HttpClient\HttpClient;
@@ -112,6 +113,10 @@ class Client extends AbstractClient
                 foreach ($rawData as $key => $item) {
                     if ($item instanceof \CURLFile) {
                         $client->addFile($item->getFilename(), $key, $item->getMimeType(), $item->getPostFilename());
+                        unset($rawData[$key]);
+                    }
+                    if ($item instanceof CURLFile) {
+                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(),$item->getOffset(),$item->getLength());
                         unset($rawData[$key]);
                     }
                 }
