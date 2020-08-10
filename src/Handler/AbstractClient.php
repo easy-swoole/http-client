@@ -7,7 +7,9 @@
 namespace EasySwoole\HttpClient\Handler;
 
 
+use EasySwoole\HttpClient\Bean\Url;
 use EasySwoole\HttpClient\Contract\ClientInterface;
+use EasySwoole\HttpClient\Exception\InvalidUrl;
 use EasySwoole\HttpClient\Handler\Swoole\Request;
 use EasySwoole\HttpClient\Traits\UriManager;
 
@@ -51,4 +53,15 @@ abstract class AbstractClient implements ClientInterface
             $this->url->setQuery(http_build_query($data + $old));
         }
     }
+
+    public function setPath(string $path)
+    {
+        // 请求时当前对象没有设置Url
+        if (!($this->url instanceof Url)) {
+            throw new InvalidUrl("HttpClient: Url is empty");
+        }
+
+        $this->url->setPath($path);
+    }
+
 }

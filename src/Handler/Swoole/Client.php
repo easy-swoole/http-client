@@ -71,7 +71,7 @@ class Client extends AbstractClient
         $client->setMethod($httpMethod);
         $request = $this->getRequest();
 
-        // 如果提供了数组那么认为是x-www-form-unlencoded快捷请求
+        // 如果提供了数组那么认为是x-www-form-urlencoded快捷请求
         if (is_array($rawData)) {
             $rawData = http_build_query($rawData);
             $request->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
@@ -88,6 +88,8 @@ class Client extends AbstractClient
             $request->setContentType($contentType);
         }
 
+        $client->setHeaders($request->getHeader());
+
         $response = $client->download($this->url->getFullPath(), $filename, $offset);
         return $response ? $this->createHttpResponse($client) : false;
     }
@@ -98,6 +100,12 @@ class Client extends AbstractClient
         $response = new Response((array)$client);
         $response->setClient($client);
         return $response;
+    }
+
+    public function setMethod($method)
+    {
+        $this->getClient()->setMethod($method);
+        $this->getRequest()->setMethod($method);
     }
 
     public function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response

@@ -420,4 +420,41 @@ class Test extends TestCase
         $status = $response->getStatusCode();
         $this->assertEquals(200, $status);
     }
+
+    public function testSetPath()
+    {
+        $httpClient = new HttpClient('https://www.easyswoole.com/Cn/demo.html');
+        $res = $httpClient->get();
+        $res = $res->getBody();
+        $this->assertContains('基于EasySwoole V3 实现的聊天室', $res);
+        $httpClient->setPath('/Cn/Preface/introduction.html');
+        $res = $httpClient->get();
+        $res = $res->getBody();
+        $this->assertContains('admin@fosuss.com', $res);
+
+
+        $httpClient = new HttpClient();
+        $httpClient->setUrl('https://www.easyswoole.com/Cn/demo.html');
+        $res = $httpClient->get();
+        $res = $res->getBody();
+        $this->assertContains('基于EasySwoole V3 实现的聊天室', $res);
+        $httpClient->setPath('/Cn/Preface/introduction.html');
+        $httpClient->setQuery(['a' => 2]);
+        $res = $httpClient->get();
+        $res = $res->getBody();
+        $this->assertContains('admin@fosuss.com', $res);
+    }
+
+    public function testSetMethod()
+    {
+        $httpClient = new HttpClient('https://www.easyswoole.com/Cn/demo.html');
+        $httpClient->setMethod('get');
+        $this->assertEquals('get',$httpClient->getClient()->requestMethod);
+        $httpClient->setMethod('post');
+        $this->assertEquals('post',$httpClient->getClient()->requestMethod);
+        $httpClient->setMethod('put');
+        $this->assertEquals('put',$httpClient->getClient()->requestMethod);
+        $httpClient->setMethod('delete');
+        $this->assertEquals('delete',$httpClient->getClient()->requestMethod);
+    }
 }
