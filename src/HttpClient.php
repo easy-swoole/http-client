@@ -61,6 +61,12 @@ class HttpClient
         return $this;
     }
 
+    public function setPath(string $path): HttpClient
+    {
+        $this->clientHandler->setPath($path);
+        return $this;
+    }
+
     public function setEnableSSL(bool $enableSSL = true)
     {
         /** @see UriManager */
@@ -275,7 +281,7 @@ class HttpClient
 
     public function setMethod(string $method): HttpClient
     {
-        $this->clientHandler->getRequest()->setMethod($method);
+        $this->clientHandler->setMethod($method);
         return $this;
     }
 
