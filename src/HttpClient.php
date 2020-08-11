@@ -61,7 +61,7 @@ class HttpClient
         return $this;
     }
 
-    public function setPath(string $path): HttpClient
+    public function setPath(?string $path = null): HttpClient
     {
         $this->clientHandler->setPath($path);
         return $this;
