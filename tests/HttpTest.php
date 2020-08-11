@@ -443,6 +443,11 @@ class Test extends TestCase
         $res = $httpClient->get();
         $res = $res->getBody();
         $this->assertContains('admin@fosuss.com', $res);
+        $httpClient->setPath();
+        $res = $httpClient->get();
+        $res = $res->getBody();
+        $this->assertContains('一种愉悦的开发方式', $res);
+
     }
 
     public function testSetMethod()

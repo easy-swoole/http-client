@@ -54,7 +54,7 @@ abstract class AbstractClient implements ClientInterface
         }
     }
 
-    public function setPath(string $path)
+    public function setPath(?string $path = null)
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
