@@ -49,8 +49,12 @@ class Client extends AbstractClient
 
     public function upgrade(bool $mask = true): bool
     {
-        $this->getRequest()->setClientSetting('websocket_mask', $mask);
+        $request = $this->getRequest();
+        $request->setClientSetting('websocket_mask', $mask);
+
         $client = $this->getClient();
+        $client->setCookies($request->getCookies());
+        $client->setHeaders($request->getHeader());
         return $client->upgrade($this->url->getFullPath());
     }
 
