@@ -42,7 +42,9 @@ class Client extends AbstractClient
     public function closeClient(): bool
     {
         if ($this->client instanceof SwooleHttpClient) {
-            return $this->client->close();
+            $result = $this->client->close();
+            $this->client = null;
+            return $result;
         }
         return false;
     }
@@ -128,7 +130,7 @@ class Client extends AbstractClient
                         unset($rawData[$key]);
                     }
                     if ($item instanceof CURLFile) {
-                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(),$item->getOffset(),$item->getLength());
+                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(), $item->getOffset(), $item->getLength());
                         unset($rawData[$key]);
                     }
                 }
