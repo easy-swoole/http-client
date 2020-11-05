@@ -54,6 +54,16 @@ $server->on('request', function (\Swoole\Http\Request $request, \Swoole\Http\Res
 
 });
 
+$server->on('open', function (Swoole\WebSocket\Server $server, Swoole\Http\Request $request) {
+    if (isset($request->header['aaa'])) {
+        $server->push($request->fd, json_encode($request->header));
+    }
+
+    if (isset($request->cookie['ca-1'])) {
+        $server->push($request->fd, json_encode($request->cookie));
+    }
+});
+
 $server->on('message', function ($server, $frame) {
     echo "received message: {$frame->data}\n";
     $data = json_decode($frame->data, true);
