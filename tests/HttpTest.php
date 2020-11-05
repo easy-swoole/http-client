@@ -7,7 +7,7 @@ use EasySwoole\HttpClient\HttpClient;
 use PHPUnit\Framework\TestCase;
 use Swoole\WebSocket\Frame;
 
-class Test extends TestCase
+class HttpTest extends TestCase
 {
     /*
      * url内容请看 tests/index.php
@@ -342,20 +342,31 @@ class Test extends TestCase
     function testWebsocket()
     {
         $client = new HttpClient('127.0.0.1:9510');
+        $client->setHeader('aaa','bbb');
         $upgradeResult = $client->upgrade('cookie1', 'cook');
         $this->assertIsBool(true, $upgradeResult);
+        $recvFrame = $client->recv();
+        $this->assertEquals('bbb', json_decode($recvFrame->data,true)['aaa'] ?? '');
+
         $frame = new Frame();
         $frame->data = json_encode(['action' => 'hello', 'content' => ['a' => 1]]);
         $pushResult = $client->push($frame);
         $this->assertIsBool(true, $pushResult);
+
         $recvFrame = $client->recv();
         $this->assertIsBool(true, !!$recvFrame);
         $this->assertEquals('call hello with arg:{"a":1}', $recvFrame->data);
 
         $client = new HttpClient();
         $client->setUrl('127.0.0.1:9510');
+        $client->addCookie('ca-1','cookie1');
         $upgradeResult = $client->upgrade('cookie1', 'cook');
         $this->assertIsBool(true, $upgradeResult);
+
+
+        $recvFrame = $client->recv();
+        $this->assertEquals('cookie1', json_decode($recvFrame->data,true)['ca-1'] ?? '');
+
         $frame = new Frame();
         $frame->data = json_encode(['action' => 'hello', 'content' => ['a' => 1]]);
         $pushResult = $client->push($frame);
@@ -426,27 +437,27 @@ class Test extends TestCase
         $httpClient = new HttpClient('https://www.easyswoole.com/Cn/demo.html');
         $res = $httpClient->get();
         $res = $res->getBody();
-        $this->assertContains('基于EasySwoole V3 实现的聊天室', $res);
+        $this->assertStringContainsString('基于EasySwoole V3 实现的聊天室', $res);
         $httpClient->setPath('/Cn/Preface/introduction.html');
         $res = $httpClient->get();
         $res = $res->getBody();
-        $this->assertContains('admin@fosuss.com', $res);
+        $this->assertStringContainsString('admin@fosuss.com', $res);
 
 
         $httpClient = new HttpClient();
         $httpClient->setUrl('https://www.easyswoole.com/Cn/demo.html');
         $res = $httpClient->get();
         $res = $res->getBody();
-        $this->assertContains('基于EasySwoole V3 实现的聊天室', $res);
+        $this->assertStringContainsString('基于EasySwoole V3 实现的聊天室', $res);
         $httpClient->setPath('/Cn/Preface/introduction.html');
         $httpClient->setQuery(['a' => 2]);
         $res = $httpClient->get();
         $res = $res->getBody();
-        $this->assertContains('admin@fosuss.com', $res);
+        $this->assertStringContainsString('admin@fosuss.com', $res);
         $httpClient->setPath();
         $res = $httpClient->get();
         $res = $res->getBody();
-        $this->assertContains('一种愉悦的开发方式', $res);
+        $this->assertStringContainsString('一种愉悦的开发方式', $res);
 
     }
 
@@ -454,12 +465,12 @@ class Test extends TestCase
     {
         $httpClient = new HttpClient('https://www.easyswoole.com/Cn/demo.html');
         $httpClient->setMethod('get');
-        $this->assertEquals('get',$httpClient->getClient()->requestMethod);
+        $this->assertEquals('get', $httpClient->getClient()->requestMethod);
         $httpClient->setMethod('post');
-        $this->assertEquals('post',$httpClient->getClient()->requestMethod);
+        $this->assertEquals('post', $httpClient->getClient()->requestMethod);
         $httpClient->setMethod('put');
-        $this->assertEquals('put',$httpClient->getClient()->requestMethod);
+        $this->assertEquals('put', $httpClient->getClient()->requestMethod);
         $httpClient->setMethod('delete');
-        $this->assertEquals('delete',$httpClient->getClient()->requestMethod);
+        $this->assertEquals('delete', $httpClient->getClient()->requestMethod);
     }
 }

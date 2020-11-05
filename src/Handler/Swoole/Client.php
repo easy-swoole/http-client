@@ -42,15 +42,21 @@ class Client extends AbstractClient
     public function closeClient(): bool
     {
         if ($this->client instanceof SwooleHttpClient) {
-            return $this->client->close();
+            $result = $this->client->close();
+            $this->client = null;
+            return $result;
         }
         return false;
     }
 
     public function upgrade(bool $mask = true): bool
     {
-        $this->getRequest()->setClientSetting('websocket_mask', $mask);
+        $request = $this->getRequest();
+        $request->setClientSetting('websocket_mask', $mask);
+
         $client = $this->getClient();
+        $request->getCookies() && $client->setCookies($request->getCookies());
+        $request->getHeader() && $client->setHeaders($request->getHeader());
         return $client->upgrade($this->url->getFullPath());
     }
 
@@ -115,7 +121,13 @@ class Client extends AbstractClient
         //预处理。合并cookie 和header
         $request->setMethod($httpMethod);
         $client->setMethod($httpMethod);
-        $client->setCookies((array)$request->getCookies() + (array)$client->cookies);
+
+        $cookies = (array)$request->getCookies() + (array)$client->cookies;
+        if ($cookies) {
+            $client->setCookies($cookies);
+        }
+
+
         if ($httpMethod == HttpClient::METHOD_POST) {
             if (is_array($rawData)) {
                 foreach ($rawData as $key => $item) {
@@ -124,7 +136,7 @@ class Client extends AbstractClient
                         unset($rawData[$key]);
                     }
                     if ($item instanceof CURLFile) {
-                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(),$item->getOffset(),$item->getLength());
+                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(), $item->getOffset(), $item->getLength());
                         unset($rawData[$key]);
                     }
                 }
@@ -141,7 +153,12 @@ class Client extends AbstractClient
         if (!empty($contentType)) {
             $request->setContentType($contentType);
         }
-        $client->setHeaders($request->getHeader());
+
+        $headers = $request->getHeader();
+        if ($headers){
+            $client->setHeaders($headers);
+        }
+
         $client->execute($this->url->getFullPath());
         // 如果不设置保持长连接则直接关闭当前链接
         if (!isset($request->getClientSetting()['keep_alive']) || $request->getClientSetting()['keep_alive'] !== true) {
