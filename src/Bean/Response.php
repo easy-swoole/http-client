@@ -249,15 +249,25 @@ class Response extends SplBean
 
     /**
      * 获取xml格式的内容
+     * @see https://www.w3.org/TR/2008/REC-xml-20081126/#charsets - XML charset range
+     * @see http://php.net/manual/en/regexp.reference.escape.php - escape in UTF-8 mode
      * @param bool $assoc true返回数组 false返回对象
      * @return array|object
      */
     public function xml($assoc = false)
     {
-        $xml = simplexml_load_string($this->body, null, LIBXML_NOCDATA | LIBXML_COMPACT);
+
+        $backup = libxml_disable_entity_loader(true);
+
+        $xml = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+/u', '', $this->body);
+
+        $result = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_NOCDATA | LIBXML_NOBLANKS);
+
+        libxml_disable_entity_loader($backup);
+
         if ($assoc) {
-            $xml = (array)$xml;
+            $result = (array)$result;
         }
-        return $xml;
+        return $result;
     }
 }

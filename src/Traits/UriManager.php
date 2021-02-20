@@ -28,6 +28,10 @@ trait UriManager
      */
     public function setUrl($url): self
     {
+        if (empty($url)) {
+            return $this;
+        }
+
         if ($url instanceof Url) {
             $this->url = $url;
             return $this;
@@ -43,6 +47,11 @@ trait UriManager
         return $this;
     }
 
+    public function setPath(?string $path = null)
+    {
+        $this->url->setPath($path);
+        return $this;
+    }
 
     public function setQuery(?array $data = null)
     {
@@ -59,7 +68,7 @@ trait UriManager
      * 解析当前的请求Url
      * @throws InvalidUrl
      */
-    protected function parserUrlInfo(?array $qurey = null)
+    protected function parserUrlInfo()
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
@@ -105,7 +114,6 @@ trait UriManager
         $this->url->setFullPath($path . $query);
         return $this->url;
     }
-
 
 
     /**
