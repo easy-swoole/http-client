@@ -8,11 +8,12 @@
 
 namespace EasySwoole\HttpClient;
 
+use EasySwoole\HttpClient\Bean\CURLFile;
 use EasySwoole\HttpClient\Bean\Response;
-use EasySwoole\HttpClient\Contract\ClientInterface;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
-use EasySwoole\HttpClient\Handler\Swoole\Client;
+use EasySwoole\HttpClient\Traits\Request;
 use EasySwoole\HttpClient\Traits\UriManager;
+use Swoole\Coroutine\Http\Client as CoroutineClient;
 use Swoole\WebSocket\Frame;
 
 class HttpClient
@@ -36,331 +37,36 @@ class HttpClient
     const CONTENT_TYPE_APPLICATION_JSON = 'application/json';
     const CONTENT_TYPE_X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
 
-    /**
-     * @var ClientInterface
-     */
-    protected $clientHandler;
+    use UriManager;
 
+    use Request;
+
+    /** @var CoroutineClient */
+    protected $client;
 
     /**
      * HttpClient constructor.
      * @param string|null $url
+     * @throws InvalidUrl
      */
     public function __construct(?string $url = null)
     {
-        $this->clientHandler = new Client($url);
-        $this->setTimeout(5);
-        $this->setConnectTimeout(3);
-    }
-
-    // --------  客户端配置设置方法  --------
-
-    public function setUrl($url): HttpClient
-    {
-        /** @see UriManager */
-        $this->clientHandler->setUrl($url);
-        return $this;
-    }
-
-    public function setPath(?string $path = null): HttpClient
-    {
-        $this->clientHandler->setPath($path);
-        return $this;
-    }
-
-    public function setEnableSSL(bool $enableSSL = true)
-    {
-        /** @see UriManager */
-        $this->clientHandler->setEnableSSL($enableSSL);
+        $this->setUrl($url);
     }
 
     /**
-     * @return ClientInterface
-     */
-    public function getClientHandler(): ClientInterface
-    {
-        return $this->clientHandler;
-    }
-
-    /**
-     * @param ClientInterface $clientHandler
-     */
-    public function setClientHandler(ClientInterface $clientHandler): void
-    {
-        $this->clientHandler = $clientHandler;
-    }
-
-    public function enableFollowLocation(int $maxRedirect = 5): int
-    {
-        return $this->clientHandler->getRequest()->setFollowLocation($maxRedirect);
-    }
-
-    public function setQuery(?array $data = null): HttpClient
-    {
-        $this->clientHandler->setQuery($data);
-        return $this;
-    }
-
-    /**
-     * 设置请求等待超时时间
-     * @param float $timeout 超时时间 单位秒(可传入浮点数指定毫秒)
+     * 设置重定向次数 兼容以前版本的方法名称
+     * @param int $maxRedirect
      * @return HttpClient
      */
-    public function setTimeout(float $timeout): HttpClient
+    public function enableFollowLocation(int $maxRedirect = 5)
     {
-        $this->clientHandler->getRequest()->setTimeout($timeout);
-        return $this;
+        return $this->setFollowLocation($maxRedirect);
     }
 
-    /**
-     * 设置连接服务端的超时时间
-     * @param float $connectTimeout 超时时间 单位秒(可传入浮点数指定毫秒)
-     * @return HttpClient
-     */
-    public function setConnectTimeout(float $connectTimeout): HttpClient
-    {
-        $this->clientHandler->getRequest()->setConnectTimeout($connectTimeout);
-        return $this;
-    }
 
-    /**
-     * 启用或关闭HTTP长连接
-     * @param bool $keepAlive 是否开启长连接
-     * @return $this
-     */
-    public function setKeepAlive(bool $keepAlive = true)
-    {
-        $this->clientHandler->getRequest()->setKeepAlive($keepAlive);
-        return $this;
-    }
 
-    /**
-     * 启用或关闭服务器证书验证
-     * 可以同时设置是否允许自签证书(默认不允许)
-     * @param bool $sslVerifyPeer 是否开启验证
-     * @param bool $sslAllowSelfSigned 是否允许自签证书
-     * @return HttpClient
-     */
-    public function setSslVerifyPeer(bool $sslVerifyPeer = true, $sslAllowSelfSigned = false)
-    {
-        $this->clientHandler->getRequest()->setSslVerifyPeer($sslVerifyPeer, $sslAllowSelfSigned);
-        return $this;
-    }
-
-    /**
-     * 设置服务器主机名称
-     * 与ssl_verify_peer配置或Client::verifyPeerCert配合使用
-     * @param string $sslHostName 服务器主机名称
-     * @return HttpClient
-     */
-    public function setSslHostName(string $sslHostName)
-    {
-        $this->clientHandler->getRequest()->setSslHostName($sslHostName);
-        return $this;
-    }
-
-    /**
-     * 设置验证用的SSL证书
-     * @param string $sslCafile 证书文件路径
-     * @return $this
-     */
-    public function setSslCafile(string $sslCafile)
-    {
-        $this->clientHandler->getRequest()->setSslCafile($sslCafile);
-        return $this;
-    }
-
-    /**
-     * 设置SSL证书目录(验证用)
-     * @param string $sslCapath 证书目录
-     * @return $this
-     */
-    public function setSslCapath(string $sslCapath)
-    {
-        $this->clientHandler->getRequest()->setSslCapath($sslCapath);
-        return $this;
-    }
-
-    /**
-     * 设置请求使用的证书文件
-     * @param string $sslCertFile 证书文件路径
-     * @return $this
-     */
-    public function setSslCertFile(string $sslCertFile)
-    {
-        $this->clientHandler->getRequest()->setSslCertFile($sslCertFile);
-        return $this;
-    }
-
-    /**
-     * 设置请求使用的证书秘钥文件
-     * @param string $sslKeyFile 秘钥文件路径
-     * @return $this
-     */
-    public function setSslKeyFile(string $sslKeyFile)
-    {
-        $this->clientHandler->getRequest()->setSslKeyFile($sslKeyFile);
-        return $this;
-    }
-
-    /**
-     * 设置HTTP代理
-     * @param string $proxyHost 代理地址
-     * @param int $proxyPort 代理端口
-     * @param string|null $proxyUser 鉴权用户(非必须)
-     * @param string|null $proxyPass 鉴权密码(非必须)
-     * @return $this
-     */
-    public function setProxyHttp(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
-    {
-        $this->clientHandler->getRequest()->setProxyHttp($proxyHost, $proxyPort, $proxyUser, $proxyPass);
-        return $this;
-    }
-
-    /**
-     * 设置Socks5代理
-     * @param string $proxyHost 代理地址
-     * @param int $proxyPort 代理端口
-     * @param string|null $proxyUser 鉴权用户(非必须)
-     * @param string|null $proxyPass 鉴权密码(非必须)
-     * @return HttpClient
-     */
-    public function setProxySocks5(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
-    {
-        $this->clientHandler->getRequest()->setProxySocks5($proxyHost, $proxyPort, $proxyUser, $proxyPass);
-        return $this;
-    }
-
-    /**
-     * 设置端口绑定
-     * 用于客户机有多张网卡的时候
-     * 设置本客户端底层Socket使用哪张网卡和端口进行通讯
-     * @param string $bindAddress 需要绑定的地址
-     * @param integer $bindPort 需要绑定的端口
-     * @return HttpClient
-     */
-    public function setSocketBind(string $bindAddress, int $bindPort)
-    {
-        $this->clientHandler->getRequest()->setSocketBind($bindAddress, $bindPort);
-        return $this;
-    }
-
-    /**
-     * 直接设置客户端配置
-     * @param string $key 配置key值
-     * @param mixed $setting 配置value值
-     * @return HttpClient
-     */
-    public function setClientSetting(string $key, $setting): HttpClient
-    {
-        $this->clientHandler->getRequest()->setClientSetting($key, $setting);
-        return $this;
-    }
-
-    /**
-     * 直接批量设置客户端配置
-     * @param array $settings 需要设置的配置项
-     * @param bool $isMerge 是否合并设置(默认直接覆盖配置)
-     * @return HttpClient
-     */
-    public function setClientSettings(array $settings, $isMerge = true): HttpClient
-    {
-        $this->clientHandler->getRequest()->setClientSettings($settings, $isMerge);
-        return $this;
-    }
-
-    public function setBasicAuth(string $userName, string $password): HttpClient
-    {
-        $this->clientHandler->getRequest()->setBasicAuth($userName, $password);
-        return $this;
-    }
-
-    public function getClient()
-    {
-        return $this->clientHandler->getClient();
-    }
-
-    public function setMethod(string $method): HttpClient
-    {
-        $this->clientHandler->setMethod($method);
-        return $this;
-    }
-
-    /**
-     * 设置为XMLHttpRequest请求
-     * @return $this
-     */
-    public function setXMLHttpRequest()
-    {
-        $this->setHeader('x-requested-with', 'xmlhttprequest');
-        return $this;
-    }
-
-    /**
-     * 设置为Json请求
-     * @return $this
-     */
-    public function setContentTypeJson()
-    {
-        $this->setContentType(HttpClient::CONTENT_TYPE_APPLICATION_JSON);
-        return $this;
-    }
-
-    /**
-     * 设置为Xml请求
-     * @return $this
-     */
-    public function setContentTypeXml()
-    {
-        $this->setContentType(HttpClient::CONTENT_TYPE_APPLICATION_XML);
-        return $this;
-    }
-
-    /**
-     * 设置为FromData请求
-     * @return $this
-     */
-    public function setContentTypeFormData()
-    {
-        $this->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
-        return $this;
-    }
-
-    /**
-     * 设置为FromUrlencoded请求
-     * @return $this
-     */
-    public function setContentTypeFormUrlencoded()
-    {
-        $this->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
-        return $this;
-    }
-
-    /**
-     * 设置ContentType
-     * @param string $contentType
-     * @return HttpClient
-     */
-    public function setContentType(string $contentType)
-    {
-        $this->setHeader('content-type', $contentType);
-        return $this;
-    }
-
-    /**
-     * 进行一次RAW请求
-     * 此模式下直接发送Raw数据需要手动组装
-     * 请注意此方法会忽略设置的POST数据而使用参数传入的RAW数据
-     * @param string $httpMethod 请求使用的方法 默认为GET
-     * @param null $rawData 请注意如果需要发送JSON或XML需要自己先行编码
-     * @param string $contentType 请求类型 默认不去设置
-     * @return Response
-     * @throws InvalidUrl
-     */
-    protected function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
-    {
-        return $this->clientHandler->rawRequest($httpMethod, $rawData, $contentType);
-    }
+    /**---------------------------------http请求---------------------------------------**/
 
     /**
      * 快速发起GET请求
@@ -465,7 +171,7 @@ class HttpClient
 
     /**
      * 快速发起XML POST
-     * @param string $data 数据需要自己先行转为字符串
+     * @param string|null $data 数据需要自己先行转为字符串
      * @param array $headers
      * @return Response
      * @throws InvalidUrl
@@ -477,7 +183,7 @@ class HttpClient
 
     /**
      * 快速发起JSON POST
-     * @param string $data 数据需要自己先行转为字符串
+     * @param string|null $data 数据需要自己先行转为字符串
      * @param array $headers
      * @return Response
      * @throws InvalidUrl
@@ -488,113 +194,205 @@ class HttpClient
     }
 
     /**
-     * 文件下载直接落盘不走Body拼接更节省内存
-     * 可以通过偏移量(offset=原文件字节数)实现APPEND的效果
-     * @param string $filename 文件保存到路径
-     * @param int $offset 写入偏移量 (设0时如文件已存在底层会自动清空此文件)
-     * @param string $httpMethod 设置请求的HTTP方法
-     * @param null $rawData 设置请求数据
-     * @param null $contentType 设置请求类型
-     * @return Response|false 当文件打开失败或feek失败时会返回false
+     * 下载文件 download 与 get 方法的不同是 download 收到数据后会写入到磁盘，而不是在内存中对 HTTP Body 进行拼接。因此 download 仅使用小量内存，就可以完成超大文件的下载。
+     * @param string $filename
+     * @param int $offset
+     * @param string $httpMethod
+     * @param null $rawData
+     * @param null $contentType
+     * @return Response|false
      * @throws InvalidUrl
      */
     public function download(string $filename, int $offset = 0, $httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null)
     {
-        return $this->clientHandler->download($filename, $offset, $httpMethod, $rawData, $contentType);
+
+        $client = $this->getClient();
+        $client->setMethod($httpMethod);
+
+        // 如果提供了数组那么认为是x-www-form-urlencoded快捷请求
+        if (is_array($rawData)) {
+            $rawData = http_build_query($rawData);
+            $this->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+        }
+
+        // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
+        if (!empty($rawData)) {
+            $client->setData($rawData);
+            $this->setHeader('Content-Length', strlen($rawData));
+        }
+
+        // 设置ContentType(如果未设置默认为空的)
+        if (!empty($contentType)) {
+            $this->setContentType($contentType);
+        }
+
+        $client->setHeaders($this->getHeader());
+
+        $response = $client->download($this->url->getFullPath(), $filename, $offset);
+        return $response ? $this->createHttpResponse($client) : false;
     }
 
-
     /**
-     * 设置请求头集合
-     * @param array $header
-     * @param bool $isMerge
-     * @param bool strtolower
-     * @return HttpClient
+     * @param string $httpMethod
+     * @param null $rawData
+     * @param null $contentType
+     * @return Response
+     * @throws InvalidUrl
      */
-    public function setHeaders(array $header, $isMerge = true, $strtolower = true): HttpClient
+    protected function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
     {
-        $this->clientHandler->getRequest()->setHeaders($header, $isMerge, $strtolower);
-        return $this;
+        $client = $this->getClient();
+        //预处理。合并cookie 和header
+        $this->setMethod($httpMethod);
+        $client->setMethod($httpMethod);
+
+        $cookies = (array)$this->getCookies() + (array)$client->cookies;
+        if ($cookies) {
+            $client->setCookies($cookies);
+        }
+
+
+        if ($httpMethod == HttpClient::METHOD_POST) {
+            if (is_array($rawData)) {
+                foreach ($rawData as $key => $item) {
+                    if ($item instanceof \CURLFile) {
+                        $client->addFile($item->getFilename(), $key, $item->getMimeType(), $item->getPostFilename());
+                        unset($rawData[$key]);
+                    }
+                    if ($item instanceof CURLFile) {
+                        $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(), $item->getOffset(), $item->getLength());
+                        unset($rawData[$key]);
+                    }
+                }
+                $client->setData($rawData);
+            } else if ($rawData !== null) {
+                $client->setData($rawData);
+            }
+        } else if ($rawData !== null) {
+            $client->setData($rawData);
+        }
+        if (is_string($rawData)) {
+            $this->setHeader('Content-Length', strlen($rawData));
+        }
+        if (!empty($contentType)) {
+            $this->setContentType($contentType);
+        }
+
+        $headers = $this->getHeader();
+        if ($headers) {
+            $client->setHeaders($headers);
+        }
+
+        $client->execute($this->url->getFullPath());
+        // 如果不设置保持长连接则直接关闭当前链接
+        if (!isset($this->getClientSetting()['keep_alive']) || $this->getClientSetting()['keep_alive'] !== true) {
+            $client->close();
+        }
+        // 处理重定向
+        $redirected = $this->getRedirected();
+        $followLocation = $this->getFollowLocation();
+        if (($client->statusCode == 301 || $client->statusCode == 302) && (($followLocation > 0) && ($redirected < $followLocation))) {
+            $this->setRedirected(++$redirected);
+            $location = $client->headers['location'];
+            $info = parse_url($location);
+            // scheme 为空 没有域名
+            if (empty($info['scheme']) && empty($info['host'])) {
+                $this->url->setPath($location);
+                $this->parserUrlInfo();
+            } else {
+                // 去除//开头的跳转域名
+                $location = ltrim($location, '//');
+                $this->setUrl($location);
+                $this->client = null;
+            }
+            return $this->rawRequest($httpMethod, $rawData, $contentType);
+        } else {
+            $this->setRedirected(0);
+        }
+        return $this->createHttpResponse($client);
     }
 
+
     /**
-     * 设置单个请求头
-     * 根据 RFC 请求头不区分大小写 会全部转成小写
-     * @param string $key
-     * @param string $value
-     * @param bool strtolower
-     * @return HttpClient
+     * 获取coroutine client
+     * @return CoroutineClient
+     * @throws InvalidUrl
      */
-    public function setHeader(string $key, string $value, $strtolower = true): HttpClient
+    public function getClient(): CoroutineClient
     {
-        $this->clientHandler->getRequest()->setHeader($key, $value, $strtolower);
-        return $this;
+        $url = $this->parserUrlInfo();
+        if ($this->client instanceof CoroutineClient) {
+            $this->client->host = $url->getHost();
+            $this->client->port = $url->getPort();
+            $this->client->ssl = $url->getIsSsl();
+            $this->client->set($this->getClientSetting());
+            return $this->client;
+        }
+        $this->client = new CoroutineClient($url->getHost(), $url->getPort(), $url->getIsSsl());
+        return $this->getClient();
     }
 
 
-    /**
-     * 设置携带的Cookie集合
-     * @param array $cookies
-     * @param bool $isMerge
-     * @return HttpClient
-     */
-    public function addCookies(array $cookies, $isMerge = true): HttpClient
-    {
-        $this->clientHandler->getRequest()->addCookies($cookies, $isMerge);
-        return $this;
-    }
+    /**--------------------------------Websocket请求-----------------------------------------------*/
 
     /**
-     * 设置携带的Cookie
-     * @param string $key
-     * @param string $value
-     * @return HttpClient
-     */
-    public function addCookie(string $key, string $value): HttpClient
-    {
-        $this->clientHandler->getRequest()->addCookie($key, $value);
-        return $this;
-    }
-
-    /**
-     * 升级为Websocket请求
+     * 升级为websocket请求
      * @param bool $mask
      * @return bool
      * @throws InvalidUrl
      */
     public function upgrade(bool $mask = true): bool
     {
-        return $this->clientHandler->upgrade($mask);
+        $this->setClientSetting('websocket_mask', $mask);
+        $client = $this->getClient();
+        $this->getCookies() && $client->setCookies($this->getCookies());
+        $this->getHeader() && $client->setHeaders($this->getHeader());
+        return $client->upgrade($this->url->getFullPath());
     }
 
     /**
-     * 发送数据（websocket）
-     * @param string|Frame $data
+     * 发送websocket数据
+     * @param Frame|string $data
      * @param int $opcode
      * @param bool $finish
-     * @return bool
+     * @return mixed
+     * @throws InvalidUrl
      */
-    public function push($data, int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true): bool
+    public function push($data, int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true)
     {
-        return $this->clientHandler->push($data, $opcode, $finish);
+        return $this->getClient()->push($data, $opcode, $finish);
     }
 
     /**
-     * 接受数据
-     * 请注意如果持续接受需要自己处理while(true)逻辑
+     * 接收websocket数据
      * @param float $timeout
      * @return Frame
+     * @throws InvalidUrl
      */
     public function recv(float $timeout = 1.0)
     {
-        return $this->clientHandler->recv($timeout);
+        return $this->getClient()->recv($timeout);
     }
 
-    function __destruct()
+    private function createHttpResponse(CoroutineClient $client): Response
     {
-        if ($this->clientHandler instanceof ClientInterface) {
-            $this->clientHandler->closeClient();
-            $this->clientHandler = null;
+        $response = new Response((array)$client);
+        $response->setClient($client);
+        return $response;
+    }
+
+    public function setMethod($method)
+    {
+        $this->getClient()->setMethod($method);
+        $this->method = $method;
+        return $this;
+    }
+
+    public function __destruct()
+    {
+        if ($this->client instanceof CoroutineClient) {
+            $this->client->close();
+            $this->client = null;
         }
     }
 }

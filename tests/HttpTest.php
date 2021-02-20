@@ -343,7 +343,7 @@ class HttpTest extends TestCase
     {
         $client = new HttpClient('127.0.0.1:9510');
         $client->setHeader('aaa','bbb');
-        $upgradeResult = $client->upgrade('cookie1', 'cook');
+        $upgradeResult = $client->upgrade(true);
         $this->assertIsBool(true, $upgradeResult);
         $recvFrame = $client->recv();
         $this->assertEquals('bbb', json_decode($recvFrame->data,true)['aaa'] ?? '');
@@ -360,7 +360,7 @@ class HttpTest extends TestCase
         $client = new HttpClient();
         $client->setUrl('127.0.0.1:9510');
         $client->addCookie('ca-1','cookie1');
-        $upgradeResult = $client->upgrade('cookie1', 'cook');
+        $upgradeResult = $client->upgrade(true);
         $this->assertIsBool(true, $upgradeResult);
 
 
@@ -434,22 +434,22 @@ class HttpTest extends TestCase
 
     public function testSetPath()
     {
-        $httpClient = new HttpClient('https://www.easyswoole.com/Cn/demo.html');
+        $httpClient = new HttpClient('https://www.easyswoole.com/demo.html');
         $res = $httpClient->get();
         $res = $res->getBody();
         $this->assertStringContainsString('基于EasySwoole V3 实现的聊天室', $res);
-        $httpClient->setPath('/Cn/Preface/introduction.html');
+        $httpClient->setPath('/Preface/intro.html');
         $res = $httpClient->get();
         $res = $res->getBody();
         $this->assertStringContainsString('admin@fosuss.com', $res);
 
 
         $httpClient = new HttpClient();
-        $httpClient->setUrl('https://www.easyswoole.com/Cn/demo.html');
+        $httpClient->setUrl('https://www.easyswoole.com/demo.html');
         $res = $httpClient->get();
         $res = $res->getBody();
         $this->assertStringContainsString('基于EasySwoole V3 实现的聊天室', $res);
-        $httpClient->setPath('/Cn/Preface/introduction.html');
+        $httpClient->setPath('/Preface/intro.html');
         $httpClient->setQuery(['a' => 2]);
         $res = $httpClient->get();
         $res = $res->getBody();
