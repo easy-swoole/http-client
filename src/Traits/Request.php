@@ -200,6 +200,18 @@ trait Request
         return $this;
     }
 
+    public function setReadTimeout(float $readTimeout)
+    {
+        $this->clientSetting['read_timeout'] = $readTimeout;
+        return $this;
+    }
+
+    public function setWriteTimeout(float $writeTimeout)
+    {
+        $this->clientSetting['write_timeout'] = $writeTimeout;
+        return $this;
+    }
+
     public function setKeepAlive(bool $keepAlive = true)
     {
         $this->clientSetting['keep_alive'] = $keepAlive;
