@@ -391,7 +391,7 @@ trait Request
      * @param string|null $proxyPass
      * @return $this
      */
-    public function setProxyHttp(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
+    public function setProxyHttp(string $proxyHost, int $proxyPort, string|null $proxyUser = null, string|null $proxyPass = null)
     {
         $this->clientSetting['http_proxy_host'] = $proxyHost;
         $this->clientSetting['http_proxy_port'] = $proxyPort;
@@ -414,7 +414,7 @@ trait Request
      * @param string|null $proxyPass
      * @return $this
      */
-    public function setProxySocks5(string $proxyHost, int $proxyPort, string $proxyUser = null, string $proxyPass = null)
+    public function setProxySocks5(string $proxyHost, int $proxyPort, string|null $proxyUser = null, string|null $proxyPass = null)
     {
         $this->clientSetting['socks5_host'] = $proxyHost;
         $this->clientSetting['socks5_port'] = $proxyPort;

@@ -176,7 +176,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postXml(string $data = null, array $headers = []): Response
+    public function postXml(string|null $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_XML);
     }
@@ -188,7 +188,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postJson(string $data = null, array $headers = []): Response
+    public function postJson(string|null $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_JSON);
     }
@@ -301,7 +301,7 @@ class HttpClient
                 $this->parserUrlInfo();
             } else {
                 // 去除//开头的跳转域名
-                $location = ltrim($location, '//');
+                $location = ltrim($location, '/');
                 $this->setUrl($location);
                 $this->client = null;
             }

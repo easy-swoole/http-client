@@ -18,7 +18,7 @@ class CURLFile
     protected $offset;
     protected $length;
 
-    function __construct(string $filename,string $name,string $mimetype=null)
+    function __construct(string $filename,string $name,string|null $mimetype=null)
     {
         $this->name = $name;
         $this->path = $filename;
