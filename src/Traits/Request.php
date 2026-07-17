@@ -148,7 +148,7 @@ trait Request
     public function setHeader(string $key, string $value, $strtolower = true)
     {
         if ($strtolower) {
-            $this->header[strtolower($key)] = strtolower($value);
+            $this->header[strtolower($key)] = $value;
         } else {
             $this->header[$key] = $value;
         }
