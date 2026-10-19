@@ -11,14 +11,14 @@ use EasySwoole\HttpClient\Exception\InvalidUrl;
 trait UriManager
 {
     /** @var Url */
-    protected $url;
+    protected ?Url $url = null;
 
 
     /**
      * 强制开启SSL请求
      * @var bool
      */
-    protected $enableSSL = false;
+    protected bool $enableSSL = false;
 
     /**
      * 设置当前要请求的URL
@@ -26,7 +26,7 @@ trait UriManager
      * @return $this
      * @throws InvalidUrl
      */
-    public function setUrl($url): self
+    public function setUrl(string|Url|null $url): static
     {
         if (empty($url)) {
             return $this;
@@ -67,13 +67,13 @@ trait UriManager
         return preg_match('/^[^\s\/?#\[\]]+$/u', $host) === 1;
     }
 
-    public function setPath(?string $path = null)
+    public function setPath(?string $path = null): static
     {
         $this->url->setPath($path);
         return $this;
     }
 
-    public function setQuery(?array $data = null)
+    public function setQuery(?array $data = null): static
     {
         if ($data) {
             $oldQuery = $this->url->getQuery();
@@ -91,7 +91,7 @@ trait UriManager
      * 解析当前的请求Url
      * @throws InvalidUrl
      */
-    protected function parserUrlInfo()
+    protected function parserUrlInfo(): Url
     {
         // 请求时当前对象没有设置Url
         if (!($this->url instanceof Url)) {
@@ -143,7 +143,7 @@ trait UriManager
      * 强制开启SSL
      * @param bool $enableSSL
      */
-    public function setEnableSSL(bool $enableSSL = true)
+    public function setEnableSSL(bool $enableSSL = true): void
     {
         $this->enableSSL = $enableSSL;
     }

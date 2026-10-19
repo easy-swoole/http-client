@@ -1,4 +1,21 @@
 <?php
+$action = $_GET['action'] ?? null;
+if ($action === 'redirect-loop') {
+    http_response_code(302);
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+if ($action === 'redirect') {
+    $status = (int)($_GET['status'] ?? 302);
+    $allowedStatuses = [301, 302, 303, 307, 308];
+    if (!in_array($status, $allowedStatuses, true)) {
+        $status = 302;
+    }
+    http_response_code($status);
+    header('Location: ' . ($_GET['location'] ?? '/index.php'));
+    exit;
+}
+
 //来源于https://github.com/ralouphie/getallheaders
 if (!function_exists('getallheaders')) {
     /**
@@ -40,6 +57,7 @@ if (!function_exists('getallheaders')) {
 }
 $data = [];
 $data['REQUEST_METHOD'] = $_SERVER['REQUEST_METHOD'];
+$data['REQUEST_URI'] = $_SERVER['REQUEST_URI'];
 $data['POST'] = $_POST;
 $data['GET'] = $_GET;
 $data['RAW'] = file_get_contents('php://input', 'r');

@@ -43,7 +43,7 @@ class HttpClient
     use Request;
 
     /** @var CoroutineClient */
-    protected $client;
+    protected ?CoroutineClient $client = null;
 
     /**
      * HttpClient constructor.
@@ -60,7 +60,7 @@ class HttpClient
      * @param int $maxRedirect
      * @return HttpClient
      */
-    public function enableFollowLocation(int $maxRedirect = 5)
+    public function enableFollowLocation(int $maxRedirect = 5): static
     {
         return $this->setFollowLocation($maxRedirect);
     }
@@ -126,7 +126,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function put($data = null, array $headers = []): Response
+    public function put(mixed $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PUT, $data);
     }
@@ -138,7 +138,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function post($data = null, array $headers = []): Response
+    public function post(mixed $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data);
     }
@@ -150,7 +150,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function patch($data = null, array $headers = []): Response
+    public function patch(mixed $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_PATCH, $data);
     }
@@ -163,7 +163,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function options($data = null, array $headers = []): Response
+    public function options(mixed $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_OPTIONS, $data);
     }
@@ -177,7 +177,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postXml(string|null $data = null, array $headers = []): Response
+    public function postXml(?string $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_XML);
     }
@@ -189,7 +189,7 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    public function postJson(string|null $data = null, array $headers = []): Response
+    public function postJson(?string $data = null, array $headers = []): Response
     {
         return $this->setHeaders($headers)->rawRequest(HttpClient::METHOD_POST, $data, HttpClient::CONTENT_TYPE_APPLICATION_JSON);
     }
@@ -204,33 +204,75 @@ class HttpClient
      * @return Response|false
      * @throws InvalidUrl
      */
-    public function download(string $filename, int $offset = 0, $httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null)
+    public function download(
+        string $filename,
+        int $offset = 0,
+        string $httpMethod = HttpClient::METHOD_GET,
+        mixed $rawData = null,
+        ?string $contentType = null
+    ): Response|false
     {
+        return $this->downloadRequest($filename, $offset, $httpMethod, $rawData, $contentType);
+    }
 
+    private function downloadRequest(
+        string $filename,
+        int $offset,
+        string $httpMethod,
+        mixed $rawData,
+        ?string $contentType,
+        bool $stripEntityHeaders = false
+    ): Response|false {
         $client = $this->getClient();
         $client->setMethod($httpMethod);
+        $this->applyCookiesToClient($client);
 
         // 如果提供了数组那么认为是x-www-form-urlencoded快捷请求
         if (is_array($rawData)) {
             $rawData = http_build_query($rawData);
-            $this->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
+            $contentType = $contentType ?: HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED;
         }
 
         // 直接设置请求包体 (特殊格式的包体可以使用提供的Helper来手动构建)
-        if (!empty($rawData)) {
+        if ($rawData !== null) {
             $client->setData($rawData);
-            $this->setHeader('Content-Length', strlen($rawData));
+        } else {
+            $client->setData('');
         }
 
-        // 设置ContentType(如果未设置默认为空的)
-        if (!empty($contentType)) {
-            $this->setContentType($contentType);
+        $client->setHeaders($this->prepareRequestHeaders($rawData, $contentType, $stripEntityHeaders));
+
+        $succeeded = $client->download($this->url->getFullPath(), $filename, $offset);
+        $this->closeClientWhenNeeded($client);
+        if (!$succeeded) {
+            $this->setRedirected(0);
+            return false;
         }
 
-        $client->setHeaders($this->getHeader());
+        if ($this->canFollowRedirect($client)) {
+            $this->setRedirected($this->getRedirected() + 1);
+            $location = $client->headers['location'] ?? null;
+            if (!empty($location)) {
+                [$httpMethod, $rawData, $contentType, $stripEntityHeaders] = $this->redirectRequestArguments(
+                    $client->statusCode,
+                    $httpMethod,
+                    $rawData,
+                    $contentType
+                );
+                $this->applyRedirectLocation($location);
+                return $this->downloadRequest(
+                    $filename,
+                    $offset,
+                    $httpMethod,
+                    $rawData,
+                    $contentType,
+                    $stripEntityHeaders
+                );
+            }
+        }
 
-        $response = $client->download($this->url->getFullPath(), $filename, $offset);
-        return $response ? $this->createHttpResponse($client) : false;
+        $this->setRedirected(0);
+        return $this->createHttpResponse($client);
     }
 
     /**
@@ -240,59 +282,56 @@ class HttpClient
      * @return Response
      * @throws InvalidUrl
      */
-    protected function rawRequest($httpMethod = HttpClient::METHOD_GET, $rawData = null, $contentType = null): Response
+    protected function rawRequest(
+        string $httpMethod = HttpClient::METHOD_GET,
+        mixed $rawData = null,
+        ?string $contentType = null,
+        bool $stripEntityHeaders = false
+    ): Response
     {
         $client = $this->getClient();
         //预处理。合并cookie 和header
         $this->setMethod($httpMethod);
         $client->setMethod($httpMethod);
 
-        $cookies = (array)$this->getCookies() + (array)$client->cookies;
-        if ($cookies) {
-            $client->setCookies($cookies);
-        }
+        $this->applyCookiesToClient($client);
 
 
         if ($httpMethod == HttpClient::METHOD_POST) {
             if (is_array($rawData)) {
-                foreach ($rawData as $key => $item) {
+                $requestData = $rawData;
+                foreach ($requestData as $key => $item) {
                     if ($item instanceof \CURLFile) {
                         $client->addFile($item->getFilename(), $key, $item->getMimeType(), $item->getPostFilename());
-                        unset($rawData[$key]);
+                        unset($requestData[$key]);
                     }
                     if ($item instanceof CURLFile) {
                         $client->addFile($item->getPath(), $item->getName(), $item->getType(), $item->getFilename(), $item->getOffset(), $item->getLength());
-                        unset($rawData[$key]);
+                        unset($requestData[$key]);
                     }
                 }
-                $client->setData($rawData);
-            } else if ($rawData !== null) {
-                $client->setData($rawData);
+                $client->setData($requestData);
+            } else {
+                $client->setData($rawData ?? '');
             }
         } else if ($rawData !== null) {
             $client->setData($rawData);
-        }
-        if (is_string($rawData)) {
-            $this->setHeader('Content-Length', strlen($rawData));
-        }
-        if (!empty($contentType)) {
-            $this->setContentType($contentType);
+        } else {
+            $client->setData('');
         }
 
-        $headers = $this->getHeader();
+        $headers = $this->prepareRequestHeaders($rawData, $contentType, $stripEntityHeaders);
         if ($headers) {
             $client->setHeaders($headers);
         }
 
         $client->execute($this->url->getFullPath());
         // 如果不设置保持长连接则直接关闭当前链接
-        if (!isset($this->getClientSetting()['keep_alive']) || $this->getClientSetting()['keep_alive'] !== true) {
-            $client->close();
-        }
+        $this->closeClientWhenNeeded($client);
         // 处理重定向
         $redirected = $this->getRedirected();
         $followLocation = $this->getFollowLocation();
-        if (($client->statusCode == 301 || $client->statusCode == 302) && (($followLocation > 0) && ($redirected < $followLocation))) {
+        if ($this->isRedirectStatus($client->statusCode) && (($followLocation > 0) && ($redirected < $followLocation))) {
             $this->setRedirected(++$redirected);
             $location = $client->headers['location'] ?? null;
             if (empty($location)) {
@@ -300,12 +339,86 @@ class HttpClient
                 return $this->createHttpResponse($client);
             }
 
+            [$httpMethod, $rawData, $contentType, $stripEntityHeaders] = $this->redirectRequestArguments(
+                $client->statusCode,
+                $httpMethod,
+                $rawData,
+                $contentType
+            );
             $this->applyRedirectLocation($location);
-            return $this->rawRequest($httpMethod, $rawData, $contentType);
+            return $this->rawRequest($httpMethod, $rawData, $contentType, $stripEntityHeaders);
         } else {
             $this->setRedirected(0);
         }
         return $this->createHttpResponse($client);
+    }
+
+    protected function redirectRequestArguments(
+        int $statusCode,
+        string $httpMethod,
+        mixed $rawData,
+        ?string $contentType
+    ): array
+    {
+        $method = strtoupper($httpMethod);
+        $switchToGet = ($statusCode === 303 && $method !== self::METHOD_HEAD)
+            || (($statusCode === 301 || $statusCode === 302) && $method === self::METHOD_POST);
+
+        if ($switchToGet) {
+            return [self::METHOD_GET, null, null, true];
+        }
+
+        return [$httpMethod, $rawData, $contentType, false];
+    }
+
+    protected function isRedirectStatus(int $statusCode): bool
+    {
+        return in_array($statusCode, [301, 302, 303, 307, 308], true);
+    }
+
+    private function canFollowRedirect(CoroutineClient $client): bool
+    {
+        return $this->isRedirectStatus($client->statusCode)
+            && $this->getFollowLocation() > 0
+            && $this->getRedirected() < $this->getFollowLocation();
+    }
+
+    protected function prepareRequestHeaders(
+        mixed $rawData,
+        ?string $contentType,
+        bool $stripEntityHeaders = false
+    ): array
+    {
+        $headers = $this->getHeader();
+        if ($stripEntityHeaders) {
+            foreach (array_keys($headers) as $name) {
+                if (in_array(strtolower($name), ['content-length', 'content-type', 'transfer-encoding'], true)) {
+                    unset($headers[$name]);
+                }
+            }
+            return $headers;
+        }
+
+        if (is_string($rawData)) {
+            $headers['content-length'] = (string)strlen($rawData);
+        }
+        if (!empty($contentType)) {
+            $headers['content-type'] = $contentType;
+        }
+        return $headers;
+    }
+
+    private function applyCookiesToClient(CoroutineClient $client): void
+    {
+        $cookies = (array)$this->getCookies() + (array)$client->cookies;
+        $client->setCookies($cookies);
+    }
+
+    private function closeClientWhenNeeded(CoroutineClient $client): void
+    {
+        if (!isset($this->getClientSetting()['keep_alive']) || $this->getClientSetting()['keep_alive'] !== true) {
+            $client->close();
+        }
     }
 
     /**
@@ -471,7 +584,7 @@ class HttpClient
      * @return mixed
      * @throws InvalidUrl
      */
-    public function push($data, int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true)
+    public function push(Frame|string $data, int $opcode = WEBSOCKET_OPCODE_TEXT, bool $finish = true): bool
     {
         return $this->getClient()->push($data, $opcode, $finish);
     }
@@ -482,7 +595,7 @@ class HttpClient
      * @return Frame
      * @throws InvalidUrl
      */
-    public function recv(float $timeout = 1.0)
+    public function recv(float $timeout = 1.0): Frame|false
     {
         return $this->getClient()->recv($timeout);
     }
@@ -494,7 +607,7 @@ class HttpClient
         return $response;
     }
 
-    public function setMethod($method)
+    public function setMethod(string $method): static
     {
         $this->getClient()->setMethod($method);
         $this->method = $method;

@@ -12,29 +12,29 @@ trait Request
      * 请求携带的Cookies
      * @var array
      */
-    protected $cookies = [];
+    protected array $cookies = [];
 
 
     /**
      * 默认请求头
      * @var array
      */
-    protected $header = [
+    protected array $header = [
         "user-agent" => 'EasySwooleHttpClient/0.1',
         'accept' => '*/*',
         'pragma' => 'no-cache',
         'cache-control' => 'no-cache'
     ];
 
-    protected $followLocation = 3;
+    protected int $followLocation = 3;
 
-    protected $redirected = 0;
+    protected int $redirected = 0;
 
     /**
      * 请求方法
      * @var string
      */
-    protected $method = HttpClient::METHOD_GET;
+    protected string $method = HttpClient::METHOD_GET;
 
 
     /**
@@ -50,7 +50,7 @@ trait Request
      * @param int $followLocation
      * @return $this
      */
-    public function setFollowLocation(int $followLocation)
+    public function setFollowLocation(int $followLocation): static
     {
         $this->followLocation = $followLocation;
         return $this;
@@ -69,7 +69,7 @@ trait Request
      * @param int $redirected
      * @return $this
      */
-    public function setRedirected(int $redirected)
+    public function setRedirected(int $redirected): static
     {
         $this->redirected = $redirected;
         return $this;
@@ -104,7 +104,7 @@ trait Request
      * @param array $cookies
      * @return $this
      */
-    public function setCookies(array $cookies)
+    public function setCookies(array $cookies): static
     {
         $this->cookies = $cookies;
         return $this;
@@ -116,7 +116,7 @@ trait Request
      * @param bool $strtolower
      * @return $this
      */
-    public function setHeaders(array $header, $isMerge = true, $strtolower = true)
+    public function setHeaders(array $header, bool $isMerge = true, bool $strtolower = true): static
     {
         if (empty($header)) {
             return $this;
@@ -138,14 +138,14 @@ trait Request
      * @param string $password
      * @return $this
      */
-    public function setBasicAuth(string $userName, string $password)
+    public function setBasicAuth(string $userName, string $password): static
     {
         $basicAuthToken = base64_encode("{$userName}:{$password}");
         $this->setHeader('Authorization', "Basic {$basicAuthToken}", false);
         return $this;
     }
 
-    public function setHeader(string $key, string $value, $strtolower = true)
+    public function setHeader(string $key, string $value, bool $strtolower = true): static
     {
         if ($strtolower) {
             $this->header[strtolower($key)] = $value;
@@ -155,24 +155,24 @@ trait Request
         return $this;
     }
 
-    public function setMethod(string $method)
+    public function setMethod(string $method): static
     {
         $this->method = $method;
         return $this;
     }
 
-    public function setContentType(string $contentType)
+    public function setContentType(string $contentType): static
     {
         return $this->setHeader('content-type', $contentType);
     }
 
-    public function addCookie(string $key, string $value)
+    public function addCookie(string $key, string $value): static
     {
         $this->cookies[$key] = $value;
         return $this;
     }
 
-    public function addCookies(array $cookies, $isMerge = true)
+    public function addCookies(array $cookies, bool $isMerge = true): static
     {
 
         if ($isMerge) {  // 合并配置项到当前配置中
@@ -189,7 +189,7 @@ trait Request
      * 设置为Xml请求
      * @return $this
      */
-    public function setContentTypeXml()
+    public function setContentTypeXml(): static
     {
         $this->setContentType(HttpClient::CONTENT_TYPE_APPLICATION_XML);
         return $this;
@@ -199,7 +199,7 @@ trait Request
      * 设置为FromData请求
      * @return $this
      */
-    public function setContentTypeFormData()
+    public function setContentTypeFormData(): static
     {
         $this->setContentType(HttpClient::CONTENT_TYPE_FORM_DATA);
         return $this;
@@ -209,7 +209,7 @@ trait Request
      * 设置为FromUrlencoded请求
      * @return $this
      */
-    public function setContentTypeFormUrlencoded()
+    public function setContentTypeFormUrlencoded(): static
     {
         $this->setContentType(HttpClient::CONTENT_TYPE_X_WWW_FORM_URLENCODED);
         return $this;
@@ -219,7 +219,7 @@ trait Request
      * 设置为XMLHttpRequest请求
      * @return $this
      */
-    public function setXMLHttpRequest()
+    public function setXMLHttpRequest(): static
     {
         $this->setHeader('x-requested-with', 'xmlhttprequest');
         return $this;
@@ -229,7 +229,7 @@ trait Request
      * 设置为Json请求
      * @return $this
      */
-    public function setContentTypeJson()
+    public function setContentTypeJson(): static
     {
         $this->setContentType(HttpClient::CONTENT_TYPE_APPLICATION_JSON);
         return $this;
@@ -239,7 +239,7 @@ trait Request
      * 协程客户端设置项
      * @var array
      */
-    protected $clientSetting = [];
+    protected array $clientSetting = [];
 
     /**
      * @return array
@@ -254,7 +254,7 @@ trait Request
      * @param float $timeout
      * @return $this
      */
-    public function setTimeout(float $timeout)
+    public function setTimeout(float $timeout): static
     {
         $this->clientSetting['timeout'] = $timeout;
         return $this;
@@ -265,7 +265,7 @@ trait Request
      * @param float $connectTimeout
      * @return $this
      */
-    public function setConnectTimeout(float $connectTimeout)
+    public function setConnectTimeout(float $connectTimeout): static
     {
         $this->clientSetting['connect_timeout'] = $connectTimeout;
         return $this;
@@ -276,7 +276,7 @@ trait Request
      * @param float $readTimeout
      * @return $this
      */
-    public function setReadTimeout(float $readTimeout)
+    public function setReadTimeout(float $readTimeout): static
     {
         $this->clientSetting['read_timeout'] = $readTimeout;
         return $this;
@@ -287,7 +287,7 @@ trait Request
      * @param float $writeTimeout
      * @return $this
      */
-    public function setWriteTimeout(float $writeTimeout)
+    public function setWriteTimeout(float $writeTimeout): static
     {
         $this->clientSetting['write_timeout'] = $writeTimeout;
         return $this;
@@ -298,7 +298,7 @@ trait Request
      * @param bool $keepAlive
      * @return $this
      */
-    public function setKeepAlive(bool $keepAlive = true)
+    public function setKeepAlive(bool $keepAlive = true): static
     {
         $this->clientSetting['keep_alive'] = $keepAlive;
         return $this;
@@ -310,7 +310,7 @@ trait Request
      * @param false $sslAllowSelfSigned 允许自签名证书
      * @return $this
      */
-    public function setSslVerifyPeer(bool $sslVerifyPeer = true, $sslAllowSelfSigned = false)
+    public function setSslVerifyPeer(bool $sslVerifyPeer = true, bool $sslAllowSelfSigned = false): static
     {
         $this->clientSetting['ssl_verify_peer'] = $sslVerifyPeer;
         $this->clientSetting['ssl_allow_self_signed'] = $sslAllowSelfSigned;
@@ -322,7 +322,7 @@ trait Request
      * @param string $sslHostName
      * @return $this
      */
-    public function setSslHostName(string $sslHostName)
+    public function setSslHostName(string $sslHostName): static
     {
         $this->clientSetting['ssl_host_name'] = $sslHostName;
         return $this;
@@ -333,7 +333,7 @@ trait Request
      * @param string $sslCafile
      * @return $this
      */
-    public function setSslCafile(string $sslCafile)
+    public function setSslCafile(string $sslCafile): static
     {
         $this->clientSetting['ssl_cafile'] = $sslCafile;
         return $this;
@@ -344,7 +344,7 @@ trait Request
      * @param string $sslCapath
      * @return $this
      */
-    public function setSslCapath(string $sslCapath)
+    public function setSslCapath(string $sslCapath): static
     {
         $this->clientSetting['ssl_capath'] = $sslCapath;
         return $this;
@@ -355,7 +355,7 @@ trait Request
      * @param string $sslCertFile
      * @return $this
      */
-    public function setSslCertFile(string $sslCertFile)
+    public function setSslCertFile(string $sslCertFile): static
     {
         $this->clientSetting['ssl_cert_file'] = $sslCertFile;
         return $this;
@@ -366,7 +366,7 @@ trait Request
      * @param string $sslKeyFile
      * @return $this
      */
-    public function setSslKeyFile(string $sslKeyFile)
+    public function setSslKeyFile(string $sslKeyFile): static
     {
         $this->clientSetting['ssl_key_file'] = $sslKeyFile;
         return $this;
@@ -377,7 +377,7 @@ trait Request
      * @param $sslPassphrase
      * @return $this
      */
-    public function setSslPassphrase($sslPassphrase)
+    public function setSslPassphrase(string $sslPassphrase): static
     {
         $this->clientSetting['ssl_passphrase'] = $sslPassphrase;
         return $this;
@@ -391,7 +391,7 @@ trait Request
      * @param string|null $proxyPass
      * @return $this
      */
-    public function setProxyHttp(string $proxyHost, int $proxyPort, string|null $proxyUser = null, string|null $proxyPass = null)
+    public function setProxyHttp(string $proxyHost, int $proxyPort, ?string $proxyUser = null, ?string $proxyPass = null): static
     {
         $this->clientSetting['http_proxy_host'] = $proxyHost;
         $this->clientSetting['http_proxy_port'] = $proxyPort;
@@ -414,7 +414,7 @@ trait Request
      * @param string|null $proxyPass
      * @return $this
      */
-    public function setProxySocks5(string $proxyHost, int $proxyPort, string|null $proxyUser = null, string|null $proxyPass = null)
+    public function setProxySocks5(string $proxyHost, int $proxyPort, ?string $proxyUser = null, ?string $proxyPass = null): static
     {
         $this->clientSetting['socks5_host'] = $proxyHost;
         $this->clientSetting['socks5_port'] = $proxyPort;
@@ -435,20 +435,20 @@ trait Request
      * @param int $bindPort
      * @return $this
      */
-    public function setSocketBind(string $bindAddress, int $bindPort)
+    public function setSocketBind(string $bindAddress, int $bindPort): static
     {
         $this->clientSetting['bind_address'] = $bindAddress;
         $this->clientSetting['bind_port'] = $bindPort;
         return $this;
     }
 
-    public function setClientSetting(string $key, $setting)
+    public function setClientSetting(string $key, mixed $setting): static
     {
         $this->clientSetting[$key] = $setting;
         return $this;
     }
 
-    public function setClientSettings(array $settings, $isMerge = true)
+    public function setClientSettings(array $settings, bool $isMerge = true): static
     {
         if ($isMerge) {  // 合并配置项到当前配置中
             foreach ($settings as $name => $value) {

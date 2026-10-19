@@ -13,18 +13,18 @@ use EasySwoole\Spl\SplBean;
 
 class Url extends SplBean
 {
-    protected $scheme = 'http';
-    protected $host;
-    protected $port;
-    protected $path;
-    protected $query;
-    protected $isSsl = false;
-    protected $fullPath;
+    protected string $scheme = 'http';
+    protected string $host = '';
+    protected int $port = 0;
+    protected ?string $path = null;
+    protected ?string $query = null;
+    protected bool $isSsl = false;
+    protected string $fullPath = '/';
 
     /**
      * @return mixed
      */
-    public function getScheme()
+    public function getScheme(): string
     {
         return $this->scheme;
     }
@@ -32,7 +32,7 @@ class Url extends SplBean
     /**
      * @param mixed $scheme
      */
-    public function setScheme($scheme): void
+    public function setScheme(string $scheme): void
     {
         $this->scheme = $scheme;
     }
@@ -40,7 +40,7 @@ class Url extends SplBean
     /**
      * @return mixed
      */
-    public function getHost()
+    public function getHost(): string
     {
         return $this->host;
     }
@@ -48,7 +48,7 @@ class Url extends SplBean
     /**
      * @param mixed $host
      */
-    public function setHost($host): void
+    public function setHost(string $host): void
     {
         $this->host = $host;
     }
@@ -56,7 +56,7 @@ class Url extends SplBean
     /**
      * @return mixed
      */
-    public function getPort()
+    public function getPort(): int
     {
         return $this->port;
     }
@@ -64,7 +64,7 @@ class Url extends SplBean
     /**
      * @param mixed $port
      */
-    public function setPort($port): void
+    public function setPort(int $port): void
     {
         $this->port = $port;
     }
@@ -72,7 +72,7 @@ class Url extends SplBean
     /**
      * @return mixed
      */
-    public function getPath()
+    public function getPath(): ?string
     {
         return $this->path;
     }
@@ -80,7 +80,7 @@ class Url extends SplBean
     /**
      * @param mixed $path
      */
-    public function setPath($path): void
+    public function setPath(?string $path): void
     {
         $this->path = $path;
     }
@@ -88,7 +88,7 @@ class Url extends SplBean
     /**
      * @return mixed
      */
-    public function getQuery()
+    public function getQuery(): ?string
     {
         return $this->query;
     }
@@ -96,7 +96,7 @@ class Url extends SplBean
     /**
      * @param mixed $query
      */
-    public function setQuery($query): void
+    public function setQuery(?string $query): void
     {
         $this->query = $query;
     }
@@ -105,7 +105,7 @@ class Url extends SplBean
      * IsSsl Getter
      * @return mixed
      */
-    public function getIsSsl()
+    public function getIsSsl(): bool
     {
         return $this->isSsl;
     }
@@ -114,7 +114,7 @@ class Url extends SplBean
      * IsSsl Setter
      * @param mixed $isSsl
      */
-    public function setIsSsl($isSsl): void
+    public function setIsSsl(bool $isSsl): void
     {
         $this->isSsl = $isSsl;
     }
@@ -123,7 +123,7 @@ class Url extends SplBean
      * FullPath Getter
      * @return mixed
      */
-    public function getFullPath()
+    public function getFullPath(): string
     {
         return $this->fullPath;
     }
@@ -132,7 +132,7 @@ class Url extends SplBean
      * FullPath Setter
      * @param mixed $fullPath
      */
-    public function setFullPath($fullPath): void
+    public function setFullPath(string $fullPath): void
     {
         $this->fullPath = $fullPath;
     }

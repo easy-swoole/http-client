@@ -18,32 +18,32 @@ use Swoole\Coroutine\Http\Client;
  */
 class Response extends SplBean
 {
-    protected $headers;
-    protected $body;
-    protected $errCode;
-    protected $errMsg;
-    protected $statusCode;
-    protected $set_cookie_headers;
-    protected $cookies;
-    protected $connected;
-    protected $host;
-    protected $port;
-    protected $ssl;
-    protected $setting;
-    protected $requestMethod;
-    protected $requestHeaders;
-    protected $requestBody;
-    protected $uploadFiles;
-    protected $downloadFile;
-    protected $downloadOffset;
+    protected ?array $headers = null;
+    protected ?string $body = null;
+    protected ?int $errCode = null;
+    protected ?string $errMsg = null;
+    protected ?int $statusCode = null;
+    protected ?array $set_cookie_headers = null;
+    protected ?array $cookies = null;
+    protected ?bool $connected = null;
+    protected ?string $host = null;
+    protected ?int $port = null;
+    protected ?bool $ssl = null;
+    protected ?array $setting = null;
+    protected ?string $requestMethod = null;
+    protected ?array $requestHeaders = null;
+    protected mixed $requestBody = null;
+    protected ?array $uploadFiles = null;
+    protected ?string $downloadFile = null;
+    protected ?int $downloadOffset = null;
 
-    protected $client;
+    protected ?Client $client = null;
 
     /**
      * Headers Getter
      * @return mixed
      */
-    public function getHeaders()
+    public function getHeaders(): ?array
     {
         return $this->headers;
     }
@@ -52,7 +52,7 @@ class Response extends SplBean
      * Body Getter
      * @return mixed
      */
-    public function getBody()
+    public function getBody(): ?string
     {
         return $this->body;
     }
@@ -61,7 +61,7 @@ class Response extends SplBean
      * ErrCode Getter
      * @return mixed
      */
-    public function getErrCode()
+    public function getErrCode(): ?int
     {
         return $this->errCode;
     }
@@ -70,7 +70,7 @@ class Response extends SplBean
      * ErrMsg Getter
      * @return mixed
      */
-    public function getErrMsg()
+    public function getErrMsg(): ?string
     {
         return $this->errMsg;
     }
@@ -79,7 +79,7 @@ class Response extends SplBean
      * StatusCode Getter
      * @return mixed
      */
-    public function getStatusCode()
+    public function getStatusCode(): ?int
     {
         return $this->statusCode;
     }
@@ -88,7 +88,7 @@ class Response extends SplBean
      * SetCookieHeaders Getter
      * @return mixed
      */
-    public function getSetCookieHeaders()
+    public function getSetCookieHeaders(): ?array
     {
         return $this->set_cookie_headers;
     }
@@ -97,7 +97,7 @@ class Response extends SplBean
      * Cookies Getter
      * @return mixed
      */
-    public function getCookies()
+    public function getCookies(): ?array
     {
         return $this->cookies;
     }
@@ -106,7 +106,7 @@ class Response extends SplBean
      * Connected Getter
      * @return mixed
      */
-    public function getConnected()
+    public function getConnected(): ?bool
     {
         return $this->connected;
     }
@@ -115,7 +115,7 @@ class Response extends SplBean
      * Host Getter
      * @return mixed
      */
-    public function getHost()
+    public function getHost(): ?string
     {
         return $this->host;
     }
@@ -124,7 +124,7 @@ class Response extends SplBean
      * Port Getter
      * @return mixed
      */
-    public function getPort()
+    public function getPort(): ?int
     {
         return $this->port;
     }
@@ -133,7 +133,7 @@ class Response extends SplBean
      * Ssl Getter
      * @return mixed
      */
-    public function getSsl()
+    public function getSsl(): ?bool
     {
         return $this->ssl;
     }
@@ -142,7 +142,7 @@ class Response extends SplBean
      * Setting Getter
      * @return mixed
      */
-    public function getSetting()
+    public function getSetting(): ?array
     {
         return $this->setting;
     }
@@ -151,7 +151,7 @@ class Response extends SplBean
      * RequestMethod Getter
      * @return mixed
      */
-    public function getRequestMethod()
+    public function getRequestMethod(): ?string
     {
         return $this->requestMethod;
     }
@@ -160,7 +160,7 @@ class Response extends SplBean
      * RequestHeaders Getter
      * @return mixed
      */
-    public function getRequestHeaders()
+    public function getRequestHeaders(): ?array
     {
         return $this->requestHeaders;
     }
@@ -169,7 +169,7 @@ class Response extends SplBean
      * RequestBody Getter
      * @return mixed
      */
-    public function getRequestBody()
+    public function getRequestBody(): mixed
     {
         return $this->requestBody;
     }
@@ -178,7 +178,7 @@ class Response extends SplBean
      * UploadFiles Getter
      * @return mixed
      */
-    public function getUploadFiles()
+    public function getUploadFiles(): ?array
     {
         return $this->uploadFiles;
     }
@@ -187,7 +187,7 @@ class Response extends SplBean
      * DownloadFile Getter
      * @return mixed
      */
-    public function getDownloadFile()
+    public function getDownloadFile(): ?string
     {
         return $this->downloadFile;
     }
@@ -196,7 +196,7 @@ class Response extends SplBean
      * DownloadOffset Getter
      * @return mixed
      */
-    public function getDownloadOffset()
+    public function getDownloadOffset(): ?int
     {
         return $this->downloadOffset;
     }
@@ -205,7 +205,7 @@ class Response extends SplBean
      * Client Getter
      * @return mixed
      */
-    public function getClient()
+    public function getClient(): ?Client
     {
         return $this->client;
     }
@@ -214,7 +214,7 @@ class Response extends SplBean
      * Client Setter
      * @param mixed $client
      */
-    public function setClient($client): void
+    public function setClient(Client $client): void
     {
         $this->client = $client;
     }
@@ -224,9 +224,9 @@ class Response extends SplBean
      * @param bool $assoc true返回数组 false返回对象
      * @return mixed
      */
-    public function json($assoc = false)
+    public function json(bool $assoc = false): mixed
     {
-        return json_decode($this->body, $assoc);
+        return json_decode($this->body ?? '', $assoc);
     }
 
     /**
@@ -234,9 +234,9 @@ class Response extends SplBean
      * @param bool $assoc true返回数组 false返回对象
      * @return mixed
      */
-    public function jsonp($assoc = false)
+    public function jsonp(bool $assoc = false): mixed
     {
-        $jsonp = trim($this->body);
+        $jsonp = trim($this->body ?? '');
         if (isset($jsonp[0]) && $jsonp[0] !== '[' && $jsonp[0] !== '{') {
             $begin = strpos($jsonp, '(');
             $end = strrpos($jsonp, ')');
@@ -254,9 +254,9 @@ class Response extends SplBean
      * @param bool $assoc true返回数组 false返回对象
      * @return array|object
      */
-    public function xml($assoc = false)
+    public function xml(bool $assoc = false): array|object|false
     {
-        $xml = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+/u', '', $this->body);
+        $xml = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+/u', '', $this->body ?? '');
         if ($xml === null) {
             return false;
         }

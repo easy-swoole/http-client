@@ -11,25 +11,25 @@ namespace EasySwoole\HttpClient\Bean;
 
 class CURLFile
 {
-    protected $path;
-    protected $name;
-    protected $type;
-    protected $filename;
-    protected $offset;
-    protected $length;
+    protected string $path;
+    protected string $name;
+    protected string $type;
+    protected string $filename;
+    protected int $offset = 0;
+    protected int $length = 0;
 
-    function __construct(string $filename,string $name,string|null $mimetype=null)
+    public function __construct(string $filename, string $name, ?string $mimetype = null)
     {
         $this->name = $name;
         $this->path = $filename;
-        $this->type = $mimetype;
+        $this->type = $mimetype ?? '';
         $this->filename = $filename;
     }
 
     /**
      * @return mixed
      */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->path;
     }
@@ -37,7 +37,7 @@ class CURLFile
     /**
      * @param mixed $path
      */
-    public function setPath($path): void
+    public function setPath(string $path): void
     {
         $this->path = $path;
     }
@@ -45,7 +45,7 @@ class CURLFile
     /**
      * @return mixed
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -53,7 +53,7 @@ class CURLFile
     /**
      * @param mixed $name
      */
-    public function setName($name): void
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -61,7 +61,7 @@ class CURLFile
     /**
      * @return mixed
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->type;
     }
@@ -69,7 +69,7 @@ class CURLFile
     /**
      * @param mixed $type
      */
-    public function setType($type): void
+    public function setType(string $type): void
     {
         $this->type = $type;
     }
@@ -77,7 +77,7 @@ class CURLFile
     /**
      * @return mixed
      */
-    public function getFilename()
+    public function getFilename(): string
     {
         return $this->filename;
     }
@@ -85,7 +85,7 @@ class CURLFile
     /**
      * @param mixed $filename
      */
-    public function setFilename($filename): void
+    public function setFilename(string $filename): void
     {
         $this->filename = $filename;
     }
@@ -93,7 +93,7 @@ class CURLFile
     /**
      * @return mixed
      */
-    public function getOffset()
+    public function getOffset(): int
     {
         return $this->offset;
     }
@@ -101,7 +101,7 @@ class CURLFile
     /**
      * @param mixed $offset
      */
-    public function setOffset($offset): void
+    public function setOffset(int $offset): void
     {
         $this->offset = $offset;
     }
@@ -109,7 +109,7 @@ class CURLFile
     /**
      * @return mixed
      */
-    public function getLength()
+    public function getLength(): int
     {
         return $this->length;
     }
@@ -117,7 +117,7 @@ class CURLFile
     /**
      * @param mixed $length
      */
-    public function setLength($length): void
+    public function setLength(int $length): void
     {
         $this->length = $length;
     }
