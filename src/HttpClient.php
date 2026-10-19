@@ -10,6 +10,7 @@ namespace EasySwoole\HttpClient;
 
 use EasySwoole\HttpClient\Bean\CURLFile;
 use EasySwoole\HttpClient\Bean\Response;
+use EasySwoole\HttpClient\Bean\Url;
 use EasySwoole\HttpClient\Exception\InvalidUrl;
 use EasySwoole\HttpClient\Traits\Request;
 use EasySwoole\HttpClient\Traits\UriManager;
@@ -293,23 +294,135 @@ class HttpClient
         $followLocation = $this->getFollowLocation();
         if (($client->statusCode == 301 || $client->statusCode == 302) && (($followLocation > 0) && ($redirected < $followLocation))) {
             $this->setRedirected(++$redirected);
-            $location = $client->headers['location'];
-            $info = parse_url($location);
-            // scheme 为空 没有域名
-            if (empty($info['scheme']) && empty($info['host'])) {
-                $this->url->setPath($location);
-                $this->parserUrlInfo();
-            } else {
-                // 去除//开头的跳转域名
-                $location = ltrim($location, '/');
-                $this->setUrl($location);
-                $this->client = null;
+            $location = $client->headers['location'] ?? null;
+            if (empty($location)) {
+                $this->setRedirected(0);
+                return $this->createHttpResponse($client);
             }
+
+            $this->applyRedirectLocation($location);
             return $this->rawRequest($httpMethod, $rawData, $contentType);
         } else {
             $this->setRedirected(0);
         }
         return $this->createHttpResponse($client);
+    }
+
+    /**
+     * Resolve a Location header against the current request URL.
+     *
+     * @throws InvalidUrl
+     */
+    protected function resolveRedirectUrl(string $location): string
+    {
+        $location = trim($location);
+        if ($location === '') {
+            throw new InvalidUrl('HttpClient: Redirect location is empty');
+        }
+
+        $fragmentPosition = strpos($location, '#');
+        if ($fragmentPosition !== false) {
+            $location = substr($location, 0, $fragmentPosition);
+        }
+
+        $fragmentOnly = $location === '';
+
+        $locationInfo = parse_url($location);
+        if ($locationInfo === false) {
+            throw new InvalidUrl("HttpClient: Redirect location {$location} is invalid");
+        }
+        if (!empty($locationInfo['scheme'])) {
+            return $location;
+        }
+
+        $scheme = strtolower($this->url->getScheme() ?: 'http');
+        if (str_starts_with($location, '//')) {
+            return $scheme . ':' . $location;
+        }
+
+        $host = $this->url->getHost();
+        if (str_contains($host, ':') && $host[0] !== '[') {
+            $host = '[' . $host . ']';
+        }
+        $authority = $scheme . '://' . $host;
+        $port = $this->url->getPort();
+        if (!empty($port) && !(($scheme === 'http' || $scheme === 'ws') && $port === 80)
+            && !(($scheme === 'https' || $scheme === 'wss') && $port === 443)) {
+            $authority .= ':' . $port;
+        }
+
+        if ($fragmentOnly) {
+            $query = $this->url->getQuery();
+            return $authority . ($this->url->getPath() ?: '/') . (empty($query) ? '' : '?' . $query);
+        }
+
+        if (str_starts_with($location, '?')) {
+            return $authority . ($this->url->getPath() ?: '/') . $location;
+        }
+
+        if (str_starts_with($location, '/')) {
+            return $authority . $this->normalizeRedirectPath($location);
+        }
+
+        $currentPath = $this->url->getPath() ?: '/';
+        $basePath = substr($currentPath, 0, strrpos($currentPath, '/') + 1);
+        return $authority . $this->normalizeRedirectPath($basePath . $location);
+    }
+
+    protected function normalizeRedirectPath(string $pathAndQuery): string
+    {
+        $query = '';
+        $queryPosition = strpos($pathAndQuery, '?');
+        if ($queryPosition !== false) {
+            $query = substr($pathAndQuery, $queryPosition);
+            $pathAndQuery = substr($pathAndQuery, 0, $queryPosition);
+        }
+
+        $segments = [];
+        foreach (explode('/', $pathAndQuery) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+            if ($segment === '..') {
+                array_pop($segments);
+                continue;
+            }
+            $segments[] = $segment;
+        }
+        return '/' . implode('/', $segments) . $query;
+    }
+
+    protected function applyRedirectLocation(string $location): void
+    {
+        $origin = $this->getOrigin($this->url);
+        $this->setUrl($this->resolveRedirectUrl($location));
+        $this->parserUrlInfo();
+
+        if ($origin !== $this->getOrigin($this->url)) {
+            $this->removeSensitiveRedirectCredentials();
+        }
+
+        $this->client = null;
+    }
+
+    protected function getOrigin(Url $url): string
+    {
+        $scheme = strtolower($url->getScheme() ?: 'http');
+        $port = $url->getPort();
+        if (empty($port)) {
+            $port = ($scheme === 'https' || $scheme === 'wss') ? 443 : 80;
+        }
+        return $scheme . '://' . strtolower($url->getHost()) . ':' . $port;
+    }
+
+    protected function removeSensitiveRedirectCredentials(): void
+    {
+        foreach (array_keys($this->header) as $name) {
+            if (in_array(strtolower($name), ['authorization', 'cookie', 'proxy-authorization'], true)) {
+                unset($this->header[$name]);
+            }
+        }
+        $this->cookies = [];
     }
 
 

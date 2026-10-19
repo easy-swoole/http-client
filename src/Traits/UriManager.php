@@ -37,14 +37,34 @@ trait UriManager
             return $this;
         }
         $info = parse_url($url);
+        if ($info === false) {
+            throw new InvalidUrl("HttpClient: {$url} is invalid");
+        }
         if (empty($info['scheme'])) {
             $info = parse_url('//' . $url); // 防止无scheme导致的host解析异常 默认作为http处理
+        }
+        if ($info === false || empty($info['host']) || !$this->isValidUrlHost($info['host'])) {
+            throw new InvalidUrl("HttpClient: {$url} is invalid");
+        }
+        if (isset($info['port']) && ($info['port'] < 1 || $info['port'] > 65535)) {
+            throw new InvalidUrl("HttpClient: {$url} contains an invalid port");
         }
         $this->url = new Url($info);
         if (empty($this->url->getHost())) {
             throw new InvalidUrl("HttpClient: {$url} is invalid");
         }
         return $this;
+    }
+
+    private function isValidUrlHost(string $host): bool
+    {
+        if (str_starts_with($host, '[') || str_ends_with($host, ']')) {
+            return str_starts_with($host, '[')
+                && str_ends_with($host, ']')
+                && filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+        }
+
+        return preg_match('/^[^\s\/?#\[\]]+$/u', $host) === 1;
     }
 
     public function setPath(?string $path = null)
@@ -56,8 +76,11 @@ trait UriManager
     public function setQuery(?array $data = null)
     {
         if ($data) {
-            $old = $this->url->getQuery();
-            parse_str($old, $old);
+            $oldQuery = $this->url->getQuery();
+            $old = [];
+            if (!empty($oldQuery)) {
+                parse_str($oldQuery, $old);
+            }
             $this->url->setQuery(http_build_query($data + $old));
         }
         return $this;

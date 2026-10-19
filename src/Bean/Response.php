@@ -256,16 +256,24 @@ class Response extends SplBean
      */
     public function xml($assoc = false)
     {
-
-        $backup = libxml_disable_entity_loader(true);
-
         $xml = preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+/u', '', $this->body);
+        if ($xml === null) {
+            return false;
+        }
 
-        $result = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_NOCDATA | LIBXML_NOBLANKS);
+        $useInternalErrors = libxml_use_internal_errors(true);
+        try {
+            $result = simplexml_load_string(
+                $xml,
+                'SimpleXMLElement',
+                LIBXML_COMPACT | LIBXML_NOCDATA | LIBXML_NOBLANKS | LIBXML_NONET
+            );
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($useInternalErrors);
+        }
 
-        libxml_disable_entity_loader($backup);
-
-        if ($assoc) {
+        if ($assoc && $result !== false) {
             $result = (array)$result;
         }
         return $result;
